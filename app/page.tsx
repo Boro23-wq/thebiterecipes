@@ -1,8 +1,16 @@
 import Link from "next/link";
+import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await currentUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-orange-50">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-orange-50">
       <div className="text-center">
         <h1 className="text-6xl font-bold mb-4">🍽️ Bite</h1>
         <p className="text-xl text-gray-600 mb-8">
