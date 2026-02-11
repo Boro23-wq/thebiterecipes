@@ -1,63 +1,166 @@
 import { currentUser } from "@clerk/nextjs/server";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+import { RecipeCard } from "@/components/recipe-card";
+import { Button } from "@/components/ui/button";
+import { StatsCard } from "@/components/ui/card-wrapper";
+import { BookOpen, Plus, Heart, Clock, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { spacing, text, layout, icon } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const user = await currentUser();
 
   if (!user) {
-    return null;
+    redirect("/sign-in");
   }
 
-  // Fetch user's recipes
-  const userRecipes = await db.query.recipes.findMany({
-    where: eq(recipes.userId, user.id),
-    orderBy: (recipes, { desc }) => [desc(recipes.createdAt)],
-  });
+  const userRecipes = await db
+    .select()
+    .from(recipes)
+    .where(eq(recipes.userId, user.id))
+    .orderBy(desc(recipes.createdAt))
+    .limit(6);
+
+  const totalRecipes = userRecipes.length;
+  const favoriteRecipes = userRecipes.filter((r) => r.isFavorite).length;
+
+  const recipesWithTime = userRecipes.filter((r) => r.totalTime);
+  const avgTime =
+    recipesWithTime.length > 0
+      ? Math.round(
+          recipesWithTime.reduce((sum, r) => sum + (r.totalTime || 0), 0) /
+            recipesWithTime.length,
+        )
+      : 0;
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">
-          Welcome, {user.firstName || "Chef"}! 👨‍🍳
-        </h1>
-        <Link
-          href="/recipes/new"
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
-        >
-          + Add Recipe
-        </Link>
+    <div className={spacing.section}>
+      {/* Header */}
+      <div>
+        <h1 className={text.h1}>Welcome back, {user.firstName || "Chef"}!</h1>
+        <p className={cn(text.small, "mt-0.5")}>
+          Here&apos;s an overview of your recipe collection
+        </p>
       </div>
 
-      <p className="text-gray-600 mb-8">
-        You have {userRecipes.length} recipe
-        {userRecipes.length !== 1 ? "s" : ""}
-      </p>
+      {/* Stats Cards Grid */}
+      <div className={layout.grid4}>
+        {/* Total Recipes */}
+        <StatsCard>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">
+              Total Recipes
+            </span>
+            <BookOpen className={cn(icon.small, icon.brand)} />
+          </div>
+          <div className={text.h1}>{totalRecipes}</div>
+          <p className={cn(text.muted, "mt-0.5")}>In your collection</p>
+        </StatsCard>
 
-      {userRecipes.length === 0 ? (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-          <p className="text-gray-400">
-            No recipes yet. Let&apos;s add your first one!
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {userRecipes.map((recipe) => (
-            <Link
-              key={recipe.id}
-              href={`/recipes/${recipe.id}`}
-              className="border rounded-lg p-6 hover:shadow-lg transition-shadow block"
-            >
-              <h3 className="text-xl font-semibold mb-2">{recipe.title}</h3>
-              <p className="text-sm text-gray-500">
-                {new Date(recipe.createdAt).toLocaleDateString()}
-              </p>
+        {/* Favorites */}
+        <StatsCard>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">
+              Favorites
+            </span>
+            <Heart className={cn(icon.small, icon.brand)} />
+          </div>
+          <div className={text.h1}>{favoriteRecipes}</div>
+          <p className={cn(text.muted, "mt-0.5")}>Marked as favorite</p>
+        </StatsCard>
+
+        {/* Average Cook Time */}
+        <StatsCard>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">
+              Avg Cook Time
+            </span>
+            <Clock className={cn(icon.small, icon.brand)} />
+          </div>
+          <div className={text.h1}>{avgTime > 0 ? `${avgTime}m` : "--"}</div>
+          <p className={cn(text.muted, "mt-0.5")}>Minutes per recipe</p>
+        </StatsCard>
+
+        {/* Quick Action */}
+        <div className="flex flex-col justify-between bg-brand-100 hover:bg-brand-200 transition-colors p-4 rounded-sm cursor-pointer">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">
+              Quick Action
+            </span>
+            <Plus className={cn(icon.small, icon.brand)} />
+          </div>
+          <Button variant="brand" size="sm" asChild className="w-full">
+            <Link href="/dashboard/recipes/new">
+              <Plus />
+              Add Recipe
             </Link>
-          ))}
+          </Button>
         </div>
-      )}
+      </div>
+
+      {/* Recent Recipes Section */}
+      <div className={spacing.card}>
+        <div className="flex items-center justify-between">
+          <h2 className={text.h3}>Recent Recipes</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="text-text-secondary"
+          >
+            <Link href="/dashboard/recipes">
+              View All
+              <ArrowRight className={icon.small} />
+            </Link>
+          </Button>
+        </div>
+
+        {userRecipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-sm">
+            <div className="rounded-sm bg-brand-100 p-2.5 mb-3">
+              <Plus className={cn(icon.medium, icon.brand)} />
+            </div>
+            <h3 className={cn(text.body, "font-semibold mb-0.5")}>
+              No recipes yet
+            </h3>
+            <p className={cn(text.small, "mb-3")}>
+              Let&apos;s add your first recipe!
+            </p>
+            <Button variant="brand" size="sm" asChild>
+              <Link href="/dashboard/recipes/new">
+                <Plus />
+                Add Recipe
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className={layout.grid3}>
+            {userRecipes.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                id={recipe.id}
+                title={recipe.title}
+                imageUrl={recipe.imageUrl}
+                prepTime={recipe.prepTime}
+                cookTime={recipe.cookTime}
+                totalTime={recipe.totalTime}
+                servings={recipe.servings}
+                difficulty={recipe.difficulty}
+                cuisine={recipe.cuisine}
+                category={recipe.category}
+                calories={recipe.calories}
+                isFavorite={recipe.isFavorite}
+                rating={recipe.rating}
+                createdAt={recipe.createdAt}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
