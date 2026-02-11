@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -37,7 +37,6 @@ export function CategorySelector({
   const [localCategories, setLocalCategories] = useState(categories);
 
   const handleToggle = (categoryId: string, isSelected: boolean) => {
-    // Optimistic update
     setLocalCategories((prev) =>
       prev.map((cat) =>
         cat.id === categoryId ? { ...cat, isSelected: !isSelected } : cat,
@@ -52,40 +51,34 @@ export function CategorySelector({
           await addRecipeToCategory(recipeId, categoryId);
         }
       } catch (error) {
-        // Revert on error
         setLocalCategories(categories);
-        alert(
-          error instanceof Error ? error.message : "Failed to update category",
-        );
+        console.error("Failed to update category:", error);
       }
     });
   };
-
-  const selectedCount = localCategories.filter((c) => c.isSelected).length;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="brand-light"
           size="sm"
           disabled={isPending}
           className="cursor-pointer"
         >
           <FolderPlus className="h-4 w-4" />
-          {selectedCount > 0
-            ? `In ${selectedCount} ${selectedCount === 1 ? "category" : "categories"}`
-            : "Add to Category"}
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         align="end"
-        className="w-56 border-none shadow-menu rounded-sm"
+        className="w-56 rounded-sm border-none shadow-menu"
       >
         <DropdownMenuLabel className="text-sm text-text-primary">
-          Add to Categories
+          Categories
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border-light" />
+
         {localCategories.length === 0 ? (
           <div className="px-2 py-6 text-center">
             <p className="text-sm text-text-muted mb-3">No categories yet</p>
@@ -100,17 +93,24 @@ export function CategorySelector({
           </div>
         ) : (
           localCategories.map((category) => (
-            <DropdownMenuCheckboxItem
+            <DropdownMenuItem
               key={category.id}
-              checked={category.isSelected}
-              onCheckedChange={() =>
-                handleToggle(category.id, category.isSelected)
-              }
-              className={cn("cursor-pointer")}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleToggle(category.id, category.isSelected);
+              }}
               disabled={isPending}
+              className="cursor-pointer flex items-center gap-2"
             >
+              {/* Left icon space */}
+              <div className="w-4 flex items-center justify-center ">
+                {category.isSelected && (
+                  <Check className="h-4 w-4 hover:text-white" />
+                )}
+              </div>
+
               <span className="flex-1">{category.name}</span>
-            </DropdownMenuCheckboxItem>
+            </DropdownMenuItem>
           ))
         )}
       </DropdownMenuContent>

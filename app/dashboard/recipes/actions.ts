@@ -4,7 +4,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { recipes, recipeIngredients, recipeInstructions } from "@/db/schema";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 // Helper function to parse ingredient line into amount and ingredient
 function parseIngredient(line: string): {
@@ -226,4 +227,37 @@ export async function loadMoreRecipes(offset: number, limit: number = 25) {
   });
 
   return moreRecipes;
+}
+
+export async function toggleFavorite(recipeId: string) {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get current recipe
+  const recipe = await db.query.recipes.findFirst({
+    where: and(eq(recipes.id, recipeId), eq(recipes.userId, user.id)),
+  });
+
+  if (!recipe) {
+    throw new Error("Recipe not found");
+  }
+
+  // Toggle favorite
+  await db
+    .update(recipes)
+    .set({
+      isFavorite: !recipe.isFavorite,
+    })
+    .where(eq(recipes.id, recipeId));
+
+  // Revalidate all relevant paths
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/recipes");
+  revalidatePath("/dashboard/favorites");
+  revalidatePath(`/dashboard/recipes/${recipeId}`);
+
+  return { isFavorite: !recipe.isFavorite };
 }

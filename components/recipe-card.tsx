@@ -3,6 +3,7 @@
 import { Clock, Users, Star, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { FavoriteButton } from "./favorite-button";
 
 interface RecipeCardProps {
   id: string;
@@ -80,26 +81,23 @@ export function RecipeCard({
           </div>
         )}
 
-        {/* Favorite Star */}
-        {isFavorite && (
-          <div className="absolute top-3 right-3 z-10">
-            <div className="bg-white/95 rounded-sm p-1">
-              <Star className="h-3.5 w-3.5 fill-[#FF6B35] text-[#FF6B35]" />
-            </div>
-          </div>
-        )}
-
         {/* Image Section - 60% */}
         <div className="h-52 w-full bg-[#FFF4ED] flex items-center justify-center relative">
           {imageUrl ? (
             <Image
               src={imageUrl}
               alt={title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
             />
           ) : (
             <ImageIcon className="h-12 w-12 text-[#FF6B35]/30" />
           )}
+
+          <div className="absolute top-3 right-3 z-10">
+            <FavoriteButton recipeId={id} isFavorite={isFavorite} />
+          </div>
         </div>
 
         <div className="p-4 space-y-3 bg-[#FFFAF7] flex-1 flex flex-col justify-between">

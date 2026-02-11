@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardSm } from "@/components/ui/card-wrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FavoriteButton } from "@/components/favorite-button";
 import { CategorySelector } from "@/components/category-selector";
 import {
   ArrowLeft,
@@ -101,11 +102,12 @@ export default async function RecipeDetailPage({
               recipeId={recipe.id}
               categories={categoriesWithSelection}
             />
+            <FavoriteButton
+              recipeId={recipe.id}
+              isFavorite={recipe.isFavorite}
+            />
             <Button variant="brand-light" className="cursor-pointer" size="sm">
               <Share2 className={icon.base} />
-            </Button>
-            <Button variant="brand-light" className="cursor-pointer" size="sm">
-              <Bookmark className={icon.base} />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

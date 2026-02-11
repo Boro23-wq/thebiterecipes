@@ -112,10 +112,10 @@ export default async function CategoryDetailPage({
               {/* Stats row */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-secondary inline-flex items-center rounded-sm px-3 py-1 text-sm">
-                  <span className="text-xs font-medium text-white ">
+                  <span className=" font-medium text-white ">
                     {recipes.length}
                   </span>
-                  <span className="ml-1 text-xs text-white ">
+                  <span className="ml-1  text-white ">
                     {recipes.length === 1 ? "recipe" : "recipes"}
                   </span>
                 </div>
