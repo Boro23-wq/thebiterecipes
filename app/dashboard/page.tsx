@@ -1,12 +1,20 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { recipes } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { recipes, categories } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { RecipeCard } from "@/components/recipe-card";
+import { CategoryCard } from "@/components/category-card";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/ui/card-wrapper";
-import { BookOpen, Plus, Heart, Clock, ArrowRight } from "lucide-react";
+import {
+  BookOpen,
+  Plus,
+  Heart,
+  Clock,
+  ArrowRight,
+  FolderOpen,
+} from "lucide-react";
 import Link from "next/link";
 import { spacing, text, layout, icon } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
@@ -18,6 +26,27 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
+  // Fetch pinned categories
+  const pinnedCategories = await db.query.categories.findMany({
+    where: and(eq(categories.userId, user.id), eq(categories.isPinned, true)),
+    orderBy: [desc(categories.createdAt)],
+    limit: 5,
+    with: {
+      recipeCategories: {
+        with: {
+          recipe: {
+            columns: {
+              id: true,
+              imageUrl: true,
+            },
+          },
+        },
+        limit: 4,
+      },
+    },
+  });
+
+  // Fetch recent recipes
   const userRecipes = await db
     .select()
     .from(recipes)
@@ -102,15 +131,60 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Pinned Categories Section */}
+      {pinnedCategories.length > 0 && (
+        <div className={spacing.card}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className={text.h3}>Pinned Categories</h2>
+              <p className={cn(text.muted, "mt-0.5")}>
+                Quick access to your favorite collections
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-brand hover:text-brand hover:bg-brand-50 cursor-pointer"
+            >
+              <Link href="/dashboard/categories">
+                <FolderOpen className={icon.small} />
+                View All
+              </Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {pinnedCategories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                id={category.id}
+                name={category.name}
+                description={category.description}
+                isPinned={category.isPinned}
+                recipeCount={category.recipeCategories.length}
+                recipeImages={category.recipeCategories.map(
+                  (rc) => rc.recipe.imageUrl,
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent Recipes Section */}
       <div className={spacing.card}>
-        <div className="flex items-center justify-between">
-          <h2 className={text.h3}>Recent Recipes</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className={text.h3}>Recent Recipes</h2>
+            <p className={cn(text.muted, "mt-0.5")}>
+              Your latest culinary creations
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="sm"
             asChild
-            className="text-text-secondary"
+            className="text-text-secondary hover:text-brand hover:bg-brand-50 cursor-pointer"
           >
             <Link href="/dashboard/recipes">
               View All
@@ -120,7 +194,7 @@ export default async function DashboardPage() {
         </div>
 
         {userRecipes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-gray-200 rounded-sm">
+          <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-border-light rounded-sm">
             <div className="rounded-sm bg-brand-100 p-2.5 mb-3">
               <Plus className={cn(icon.medium, icon.brand)} />
             </div>
@@ -130,7 +204,12 @@ export default async function DashboardPage() {
             <p className={cn(text.small, "mb-3")}>
               Let&apos;s add your first recipe!
             </p>
-            <Button variant="brand" size="sm" asChild>
+            <Button
+              variant="brand"
+              size="sm"
+              asChild
+              className="cursor-pointer"
+            >
               <Link href="/dashboard/recipes/new">
                 <Plus />
                 Add Recipe

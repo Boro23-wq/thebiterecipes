@@ -67,7 +67,7 @@ interface RecipesViewProps {
 
 export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
   const CONTROL_H = "h-10";
-  const RECIPES_PER_PAGE = 25;
+  const RECIPES_PER_PAGE = 24;
 
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
   const [isPending, startTransition] = useTransition();

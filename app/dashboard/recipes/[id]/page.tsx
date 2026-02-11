@@ -1,12 +1,13 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardSm } from "@/components/ui/card-wrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CategorySelector } from "@/components/category-selector";
 import {
   ArrowLeft,
   ImagePlus,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DeleteRecipeButton } from "@/components/delete-recipe-button";
 import { text, icon, badge, spacing, layout } from "@/lib/design-tokens";
+import { categories, recipeCategories } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 export default async function RecipeDetailPage({
@@ -60,6 +62,23 @@ export default async function RecipeDetailPage({
     notFound();
   }
 
+  // Fetch all user categories and check which ones have this recipe
+  const userCategories = await db.query.categories.findMany({
+    where: eq(categories.userId, user.id),
+    orderBy: [desc(categories.createdAt)],
+    with: {
+      recipeCategories: {
+        where: eq(recipeCategories.recipeId, id),
+      },
+    },
+  });
+
+  const categoriesWithSelection = userCategories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    isSelected: cat.recipeCategories.length > 0,
+  }));
+
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-brand-50">
       {/* Header Bar */}
@@ -78,6 +97,10 @@ export default async function RecipeDetailPage({
           </Button>
 
           <div className="flex items-center gap-2">
+            <CategorySelector
+              recipeId={recipe.id}
+              categories={categoriesWithSelection}
+            />
             <Button variant="brand-light" className="cursor-pointer" size="sm">
               <Share2 className={icon.base} />
             </Button>

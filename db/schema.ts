@@ -135,3 +135,47 @@ export const recipeTagsRelations = relations(recipeTags, ({ one }) => ({
     references: [tags.id],
   }),
 }));
+
+export const categories = pgTable("categories", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isPinned: boolean("is_pinned").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const recipeCategories = pgTable("recipe_categories", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  recipeId: uuid("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  categoryId: text("category_id")
+    .notNull()
+    .references(() => categories.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Add relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  recipeCategories: many(recipeCategories),
+}));
+
+export const recipeCategoriesRelations = relations(
+  recipeCategories,
+  ({ one }) => ({
+    recipe: one(recipes, {
+      fields: [recipeCategories.recipeId],
+      references: [recipes.id],
+    }),
+    category: one(categories, {
+      fields: [recipeCategories.categoryId],
+      references: [categories.id],
+    }),
+  }),
+);
