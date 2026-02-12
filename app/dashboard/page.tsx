@@ -180,12 +180,7 @@ export default async function DashboardPage() {
               Your latest culinary creations
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="text-text-secondary hover:text-brand hover:bg-brand-50 cursor-pointer"
-          >
+          <Button variant="ghost" size="sm" asChild className="cursor-pointer">
             <Link href="/dashboard/recipes">
               View All
               <ArrowRight className={icon.small} />

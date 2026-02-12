@@ -1,4 +1,3 @@
-// app/dashboard/recipes/actions.ts
 "use server";
 
 import { currentUser } from "@clerk/nextjs/server";
@@ -10,7 +9,7 @@ import {
   recipeImages,
 } from "@/db/schema";
 import { redirect } from "next/navigation";
-import { eq, and } from "drizzle-orm";
+import { ilike, desc, asc, sql, and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { UTApi } from "uploadthing/server";
 
@@ -385,6 +384,183 @@ export async function updateRecipe(recipeId: string, formData: FormData) {
   revalidatePath("/dashboard/recipes");
   revalidatePath(`/dashboard/recipes/${recipeId}`);
   redirect(`/dashboard/recipes/${recipeId}`);
+}
+
+export type RecipeSortBy = "recent" | "title" | "rating" | "time";
+
+export type RecipesCursor =
+  | { sortBy: "recent"; createdAt: string; id: string }
+  | { sortBy: "title"; title: string; id: string }
+  | { sortBy: "rating"; ratingKey: number; id: string }
+  | { sortBy: "time"; timeKey: number; id: string };
+
+export async function searchRecipes(input: {
+  q?: string;
+  sortBy?: RecipeSortBy;
+  cuisines?: string[];
+  difficulties?: string[];
+  categories?: string[];
+  favoritesOnly?: boolean;
+  cursor?: RecipesCursor | null;
+  limit?: number;
+}) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const {
+    q = "",
+    sortBy = "recent",
+    cuisines = [],
+    difficulties = [],
+    categories = [],
+    favoritesOnly = false,
+    cursor = null,
+    limit = 24,
+  } = input;
+
+  const conditions = [eq(recipes.userId, user.id)];
+
+  // 🔎 Search
+  const trimmed = q.trim();
+  if (trimmed) {
+    const term = `%${trimmed}%`;
+    conditions.push(
+      sql`(
+        ${recipes.title} ILIKE ${term} OR
+        ${recipes.cuisine} ILIKE ${term} OR
+        ${recipes.category} ILIKE ${term}
+      )`,
+    );
+  }
+
+  // 🧩 Filters
+  if (cuisines.length > 0) conditions.push(inArray(recipes.cuisine, cuisines));
+  if (difficulties.length > 0)
+    conditions.push(inArray(recipes.difficulty, difficulties));
+  if (categories.length > 0)
+    conditions.push(inArray(recipes.category, categories));
+  if (favoritesOnly) conditions.push(eq(recipes.isFavorite, true));
+
+  // Cursor/keyset predicate (adds pagination condition)
+  // For stable order we always include id as tie-breaker.
+  const ratingKeyExpr = sql<number>`COALESCE(${recipes.rating}, 0)`;
+  const timeKeyExpr = sql<number>`COALESCE(${recipes.totalTime}, 999999)`;
+
+  if (cursor && cursor.sortBy === sortBy) {
+    switch (sortBy) {
+      case "recent": {
+        const c = cursor as Extract<RecipesCursor, { sortBy: "recent" }>;
+        conditions.push(
+          sql`(
+            ${recipes.createdAt} < ${c.createdAt} OR
+            (${recipes.createdAt} = ${c.createdAt} AND ${recipes.id} < ${c.id})
+          )`,
+        );
+        break;
+      }
+      case "title": {
+        const c = cursor as Extract<RecipesCursor, { sortBy: "title" }>;
+        conditions.push(
+          sql`(
+            ${recipes.title} > ${c.title} OR
+            (${recipes.title} = ${c.title} AND ${recipes.id} > ${c.id})
+          )`,
+        );
+        break;
+      }
+      case "rating": {
+        const c = cursor as Extract<RecipesCursor, { sortBy: "rating" }>;
+        conditions.push(
+          sql`(
+            ${ratingKeyExpr} < ${c.ratingKey} OR
+            (${ratingKeyExpr} = ${c.ratingKey} AND ${recipes.id} < ${c.id})
+          )`,
+        );
+        break;
+      }
+      case "time": {
+        const c = cursor as Extract<RecipesCursor, { sortBy: "time" }>;
+        conditions.push(
+          sql`(
+            ${timeKeyExpr} > ${c.timeKey} OR
+            (${timeKeyExpr} = ${c.timeKey} AND ${recipes.id} > ${c.id})
+          )`,
+        );
+        break;
+      }
+    }
+  }
+
+  const whereClause = and(...conditions);
+
+  const orderByClause =
+    sortBy === "title"
+      ? [asc(recipes.title), asc(recipes.id)]
+      : sortBy === "rating"
+        ? [desc(ratingKeyExpr), desc(recipes.id)]
+        : sortBy === "time"
+          ? [asc(timeKeyExpr), asc(recipes.id)]
+          : [desc(recipes.createdAt), desc(recipes.id)];
+
+  const rows = await db.query.recipes.findMany({
+    where: whereClause,
+    orderBy: () => orderByClause,
+    limit: limit + 1,
+  });
+
+  const hasNext = rows.length > limit;
+  const items = hasNext ? rows.slice(0, limit) : rows;
+
+  let nextCursor: RecipesCursor | null = null;
+  if (hasNext) {
+    const last = items[items.length - 1]!;
+    if (sortBy === "recent") {
+      nextCursor = {
+        sortBy: "recent",
+        createdAt:
+          typeof last.createdAt === "string"
+            ? last.createdAt
+            : last.createdAt.toISOString(),
+        id: last.id,
+      };
+    } else if (sortBy === "title") {
+      nextCursor = {
+        sortBy: "title",
+        title: last.title,
+        id: last.id,
+      };
+    } else if (sortBy === "rating") {
+      nextCursor = {
+        sortBy: "rating",
+        ratingKey: last.rating ?? 0,
+        id: last.id,
+      };
+    } else {
+      nextCursor = {
+        sortBy: "time",
+        timeKey: last.totalTime ?? 999999,
+        id: last.id,
+      };
+    }
+  }
+
+  // Counts
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(recipes)
+    .where(whereClause);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`count(*)` })
+    .from(recipes)
+    .where(eq(recipes.userId, user.id));
+
+  return {
+    items,
+    nextCursor,
+    filteredCount: Number(count),
+    totalCount: Number(total),
+  };
 }
 
 export async function loadMoreRecipes(offset: number, limit: number = 25) {

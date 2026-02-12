@@ -49,90 +49,99 @@ export function RecipeDetailClient({
 
   return (
     <>
-      {/* Stats Grid - with dynamic servings */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {recipe.totalTime && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <Clock className={icon.base} />
-              <span className="text-xs">Total Time</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {recipe.totalTime}m
-            </span>
-          </div>
-        )}
-        {recipe.servings && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <Users className={icon.base} />
-              <span className="text-xs">Servings</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {scaledServings}
-              {servingMultiplier !== 1 && (
-                <span className="text-sm text-text-secondary ml-1">
-                  ({servingMultiplier}x)
+      {/* Recipe Overview Section */}
+      <section className="mb-8">
+        <div className="bg-white shadow-xs rounded-md p-6">
+          <h3 className={cn(text.h2, "flex items-center gap-2 mb-6")}>
+            <span className="w-1 h-6 bg-brand" />
+            Nutrition & Details
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {recipe.totalTime && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Clock className={icon.base} />
+                  <span className="text-xs">Total Time</span>
+                </div>
+                <span className="text-lg font-semibold text-text-primary">
+                  {recipe.totalTime}m
                 </span>
-              )}
-            </span>
+              </div>
+            )}
+
+            {recipe.servings && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Users className={icon.base} />
+                  <span className="text-xs">Servings</span>
+                </div>
+                <span className="text-lg font-semibold text-text-primary">
+                  {scaledServings}
+                  {servingMultiplier !== 1 && (
+                    <span className="text-sm text-text-secondary ml-1">
+                      ({servingMultiplier}x)
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            {recipe.calories && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <TrendingUp className={icon.base} />
+                  <span className="text-xs">Calories</span>
+                </div>
+                <span className="text-lg font-semibold text-text-primary">
+                  {Math.round(recipe.calories * servingMultiplier)}
+                </span>
+              </div>
+            )}
+
+            {recipe.protein && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <span className="text-xs text-text-secondary">Protein</span>
+                <span className="text-lg font-semibold text-text-primary">
+                  {Math.round(recipe.protein * servingMultiplier)}g
+                </span>
+              </div>
+            )}
+
+            {recipe.carbs && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <span className="text-xs text-text-secondary">Carbs</span>
+                <span className="text-lg font-semibold text-text-primary">
+                  {Math.round(recipe.carbs * servingMultiplier)}g
+                </span>
+              </div>
+            )}
+
+            {recipe.fat && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <span className="text-xs text-text-secondary">Fat</span>
+                <span className="text-lg font-semibold text-text-primary">
+                  {Math.round(recipe.fat * servingMultiplier)}g
+                </span>
+              </div>
+            )}
+
+            {recipe.rating && (
+              <div className="flex flex-col gap-1 p-3 bg-brand-highlight rounded-sm">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Star
+                    className={cn(icon.base, "fill-[#F7B801] text-[#F7B801]")}
+                  />
+                  <span className="text-xs">Rating</span>
+                </div>
+                <span className="text-lg font-semibold text-text-primary">
+                  {recipe.rating}/5
+                </span>
+              </div>
+            )}
           </div>
-        )}
-        {recipe.calories && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <TrendingUp className={icon.base} />
-              <span className="text-xs">Calories</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {Math.round(recipe.calories * servingMultiplier)}
-            </span>
-          </div>
-        )}
-        {recipe.protein && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <span className="text-xs">Protein</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {Math.round(recipe.protein * servingMultiplier)}g
-            </span>
-          </div>
-        )}
-        {recipe.carbs && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <span className="text-xs">Carbs</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {Math.round(recipe.carbs * servingMultiplier)}g
-            </span>
-          </div>
-        )}
-        {recipe.fat && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <span className="text-xs">Fat</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {Math.round(recipe.fat * servingMultiplier)}g
-            </span>
-          </div>
-        )}
-        {recipe.rating && (
-          <div className="flex flex-col gap-1 p-3 bg-brand-highlight rounded-sm">
-            <div className="flex items-center gap-2 text-text-secondary">
-              <Star
-                className={cn(icon.base, "fill-[#F7B801] text-[#F7B801]")}
-              />
-              <span className="text-xs">Rating</span>
-            </div>
-            <span className="text-lg font-semibold text-text-primary">
-              {recipe.rating}/5
-            </span>
-          </div>
-        )}
-      </div>
+        </div>
+      </section>
 
       {/* Tabs Section */}
       <Tabs defaultValue="ingredients" className="w-full">

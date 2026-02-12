@@ -5,7 +5,7 @@ import { categories } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/recipe-card";
-import { ArrowLeft, Edit, Pin, Plus } from "lucide-react";
+import { ArrowLeft, Edit, FolderOpen, Pin, Plus } from "lucide-react";
 import Link from "next/link";
 import { TogglePinButton } from "@/components/toggle-pin-button";
 import { DeleteCategoryButton } from "@/components/delete-category-button";
@@ -84,13 +84,17 @@ export default async function CategoryDetailPage({
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-3 mb-4">
                 <div className="min-w-0">
+                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-sm bg-brand-100">
+                    <FolderOpen className="h-7 w-7 text-brand" />
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <h1 className="truncate text-2xl font-semibold tracking-tight text-text-primary">
                       {category.name}
                     </h1>
 
                     {category.isPinned && (
-                      <span className="inline-flex items-center gap-2 rounded-md bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
+                      <span className="inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
                         <Pin className="h-3.5 w-3.5 text-brand fill-brand" />
                         <span className="text-brand">Pinned</span>
                       </span>
@@ -127,11 +131,6 @@ export default async function CategoryDetailPage({
                 </p>
               </div>
             </div>
-
-            {/* Optional: right-side “actions” block spacing */}
-            <div className="hidden sm:block">
-              <div className="h-10 w-10 rounded-full border border-border-light bg-background" />
-            </div>
           </div>
         </div>
       </div>
@@ -154,11 +153,11 @@ export default async function CategoryDetailPage({
 
       {/* Recipes Grid / Empty */}
       {recipes.length === 0 ? (
-        <div className="relative overflow-hidden rounded-xl border border-border-light bg-background">
-          <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-full bg-brand-100 blur-3xl opacity-60" />
+        <div className="relative overflow-hidden rounded-sm border border-border-light border-dashed bg-background">
+          <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-sm bg-brand-100 blur-3xl opacity-60" />
           <div className="p-8 sm:p-10">
             <div className="flex flex-col items-center text-center">
-              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100">
+              <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-sm bg-brand-100">
                 <Plus className="h-7 w-7 text-brand" />
               </div>
 

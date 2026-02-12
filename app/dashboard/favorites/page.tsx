@@ -30,6 +30,10 @@ export default async function FavoritesPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-3 mb-4">
                 <div className="min-w-0">
+                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-sm bg-brand-100">
+                    <Heart className="h-7 w-7 text-brand" />
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <h1 className="truncate text-2xl font-semibold tracking-tight text-text-primary">
                       Favorites
@@ -59,11 +63,6 @@ export default async function FavoritesPage() {
                   Tap the heart on any recipe to save it here.
                 </p>
               </div>
-            </div>
-
-            {/* Right side spacing placeholder (matches category page) */}
-            <div className="hidden sm:block">
-              <div className="h-10 w-10 rounded-full border border-border-light bg-background" />
             </div>
           </div>
         </div>

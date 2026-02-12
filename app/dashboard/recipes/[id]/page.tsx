@@ -268,7 +268,7 @@ export default async function RecipeDetailPage({
         {/* Content Container - Overlapping */}
         <div className={cn(layout.container, "relative -mt-16")}>
           {/* Recipe Header Card */}
-          <Card className="p-6 mb-6">
+          <Card className="p-6 mb-6 shadow-xs shadow-black/5">
             <div className={spacing.cardLarge}>
               <div>
                 <h1 className="text-3xl font-semibold text-text-primary mb-2">

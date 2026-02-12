@@ -123,7 +123,7 @@ export function CategoryCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 bg-white/95 backdrop-blur-sm hover:bg-white cursor-pointer shadow-sm"
+              className="h-7 w-7 bg-white/95 backdrop-blur-sm cursor-pointer shadow-xs"
               disabled={isPending}
             >
               <MoreVertical className="h-4 w-4" />

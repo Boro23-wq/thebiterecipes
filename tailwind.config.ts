@@ -35,6 +35,7 @@ export default {
         },
         border: {
           DEFAULT: "hsl(var(--border))",
+          faint: "rgba(0, 0, 0, 0.03)",
           light: "rgba(0, 0, 0, 0.05)",
           subtle: "rgba(0, 0, 0, 0.08)",
           default: "#E5E5E5",
@@ -84,10 +85,17 @@ export default {
         },
       },
       boxShadow: {
-        brand: "0 4px 16px 0 rgba(255, 107, 53, 0.08)",
-        "brand-sm": "0 2px 8px 0 rgba(255, 107, 53, 0.06)",
-        "brand-focus": "0 2px 4px 0 rgba(255, 107, 53, 0.15)",
-        "brand-xs": "0 1px 2px 0 rgba(255, 107, 53, 0.03)", // Ultra subtle for cards
+        // Neutral shadows (use these for layout/cards)
+        xs: "0 1px 2px rgba(0, 0, 0, 0.04)",
+        sm: "0 2px 6px rgba(0, 0, 0, 0.05)",
+        md: "0 4px 12px rgba(0, 0, 0, 0.06)",
+
+        // Brand shadows (use sparingly)
+        brand: "0 4px 16px rgba(255, 107, 53, 0.08)",
+        "brand-sm": "0 2px 8px rgba(255, 107, 53, 0.06)",
+        "brand-focus": "0 2px 4px rgba(255, 107, 53, 0.15)",
+
+        // Component-specific shadows
         menu: "0 -2px 12px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04)",
         dropdown: "0 10px 30px rgba(0, 0, 0, 0.08)", // For filter dropdown
       },

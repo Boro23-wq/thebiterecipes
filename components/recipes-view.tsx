@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import {
+  useState,
+  useMemo,
+  useTransition,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { RecipeCard } from "@/components/recipe-card";
 import {
   RecipeCardSkeleton,
@@ -8,7 +15,7 @@ import {
 } from "@/components/recipe-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { loadMoreRecipes } from "@/app/dashboard/recipes/actions";
+import { searchRecipes } from "@/app/dashboard/recipes/actions";
 import {
   Plus,
   LayoutGrid,
@@ -42,7 +49,10 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
+import type { RecipesCursor } from "@/app/dashboard/recipes/actions";
+
 type ViewMode = "grid" | "compact";
+type SortBy = "recent" | "title" | "rating" | "time";
 
 interface Recipe {
   id: string;
@@ -66,6 +76,17 @@ interface RecipesViewProps {
   totalCount: number;
 }
 
+function useDebouncedValue<T>(value: T, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(t);
+  }, [value, delay]);
+
+  return debounced;
+}
+
 export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
   const CONTROL_H = "h-10";
   const RECIPES_PER_PAGE = 24;
@@ -75,7 +96,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("recent");
+  const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
     [],
@@ -83,17 +104,16 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  const hasMore = recipes.length < totalCount;
+  // counts from server
+  const [totalCountState, setTotalCountState] = useState(totalCount);
+  const [filteredCount, setFilteredCount] = useState(totalCount);
+  const [nextCursor, setNextCursor] = useState<RecipesCursor | null>(null);
 
-  const loadMore = () => {
-    startTransition(async () => {
-      const moreRecipes = await loadMoreRecipes(
-        recipes.length,
-        RECIPES_PER_PAGE,
-      );
-      setRecipes((prev) => [...prev, ...moreRecipes]);
-    });
-  };
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const hasMore = Boolean(nextCursor);
 
   const cuisines = useMemo(
     () => [...new Set(recipes.map((r) => r.cuisine).filter(Boolean))],
@@ -108,77 +128,92 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
     [recipes],
   );
 
-  const sortLabels: Record<string, string> = {
+  const sortLabels: Record<SortBy, string> = {
     recent: "Most Recent",
     title: "Alphabetical",
     rating: "Highest Rated",
     time: "Quickest",
   };
 
-  const filteredRecipes = useMemo(() => {
-    let filtered = recipes;
+  useEffect(() => {
+    startTransition(async () => {
+      const res = await searchRecipes({
+        q: debouncedSearch,
+        sortBy,
+        cuisines: selectedCuisines,
+        difficulties: selectedDifficulties,
+        categories: selectedCategories,
+        favoritesOnly: showFavoritesOnly,
+        cursor: null,
+        limit: RECIPES_PER_PAGE,
+      });
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (recipe) =>
-          recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          recipe.cuisine?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          recipe.category?.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    if (selectedCuisines.length > 0) {
-      filtered = filtered.filter(
-        (recipe) => recipe.cuisine && selectedCuisines.includes(recipe.cuisine),
-      );
-    }
-
-    if (selectedDifficulties.length > 0) {
-      filtered = filtered.filter(
-        (recipe) =>
-          recipe.difficulty && selectedDifficulties.includes(recipe.difficulty),
-      );
-    }
-
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(
-        (recipe) =>
-          recipe.category && selectedCategories.includes(recipe.category),
-      );
-    }
-
-    if (showFavoritesOnly) {
-      filtered = filtered.filter((recipe) => recipe.isFavorite);
-    }
-
-    switch (sortBy) {
-      case "recent":
-        filtered.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-        break;
-      case "title":
-        filtered.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "rating":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "time":
-        filtered.sort((a, b) => (a.totalTime || 0) - (b.totalTime || 0));
-        break;
-    }
-
-    return filtered;
+      setRecipes(res.items);
+      setFilteredCount(res.filteredCount);
+      setTotalCountState(res.totalCount);
+      setNextCursor(res.nextCursor);
+    });
   }, [
-    recipes,
-    searchQuery,
+    debouncedSearch,
     sortBy,
     selectedCuisines,
     selectedDifficulties,
     selectedCategories,
     showFavoritesOnly,
+    RECIPES_PER_PAGE,
   ]);
+
+  const loadMore = useCallback(() => {
+    if (!nextCursor || isPending) return;
+
+    startTransition(async () => {
+      const res = await searchRecipes({
+        q: debouncedSearch,
+        sortBy,
+        cuisines: selectedCuisines,
+        difficulties: selectedDifficulties,
+        categories: selectedCategories,
+        favoritesOnly: showFavoritesOnly,
+        cursor: nextCursor,
+        limit: RECIPES_PER_PAGE,
+      });
+
+      setRecipes((prev) => [...prev, ...res.items]);
+      setFilteredCount(res.filteredCount);
+      setTotalCountState(res.totalCount);
+      setNextCursor(res.nextCursor);
+    });
+  }, [
+    nextCursor,
+    isPending,
+    debouncedSearch,
+    sortBy,
+    selectedCuisines,
+    selectedDifficulties,
+    selectedCategories,
+    showFavoritesOnly,
+    RECIPES_PER_PAGE,
+  ]);
+
+  useEffect(() => {
+    if (!hasMore || isPending) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      {
+        root: null,
+        rootMargin: "700px 0px",
+        threshold: 0,
+      },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, isPending, loadMore]);
 
   const activeFiltersCount =
     selectedCuisines.length +
@@ -195,7 +230,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
     setSortBy("recent");
   };
 
-  const separatorCls = "mx-2 bg-border-light";
+  const separatorCls = "mx-2 my-2 h-0 bg-transparent border-0";
 
   const menuItemCls = cn(
     "!border-0 !shadow-none !outline-none ring-0 cursor-pointer",
@@ -205,6 +240,31 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
     "data-[state=checked]:text-brand",
   );
 
+  const groupedRecipes = useMemo(() => {
+    const groups: Record<string, Recipe[]> = {};
+
+    recipes.forEach((recipe) => {
+      const date = new Date(recipe.createdAt);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      let group: string;
+      if (date.toDateString() === today.toDateString()) group = "Today";
+      else if (date.toDateString() === yesterday.toDateString())
+        group = "Yesterday";
+      else
+        group = date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+      (groups[group] ??= []).push(recipe);
+    });
+
+    return Object.entries(groups);
+  }, [recipes]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -213,9 +273,18 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           <h1 className="text-2xl font-semibold text-text-primary">
             My Recipes
           </h1>
+
           <p className="text-sm text-text-secondary mt-1">
-            {filteredRecipes.length} of {recipes.length} recipe
-            {recipes.length !== 1 ? "s" : ""}
+            {recipes.length} of{" "}
+            {activeFiltersCount > 0 || debouncedSearch
+              ? filteredCount
+              : totalCountState}{" "}
+            recipe
+            {(activeFiltersCount > 0 || debouncedSearch
+              ? filteredCount
+              : totalCountState) !== 1
+              ? "s"
+              : ""}
             {activeFiltersCount > 0 &&
               ` (${activeFiltersCount} filter${activeFiltersCount > 1 ? "s" : ""} active)`}
           </p>
@@ -258,7 +327,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
               variant="ghost"
               size="icon"
               onClick={() => setSearchQuery("")}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-text-muted hover:text-text-primary cursor-pointer"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-text-muted hover:text-white cursor-pointer"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -266,7 +335,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
         </div>
 
         {/* Sort */}
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
           <SelectTrigger
             className={cn(
               "w-full md:w-55 cursor-pointer",
@@ -288,13 +357,13 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             align="start"
             sideOffset={6}
             position="popper"
-            className="border border-border-light bg-white"
+            className="border border-border-light bg-white  shadow-xs"
           >
             <SelectGroup>
               <SelectLabel className="text-xs text-text-muted">
                 Sort by
               </SelectLabel>
-              <SelectItem value="recent" className="cursor-pointer">
+              <SelectItem className="cursor-pointer" value="recent">
                 Most Recent
               </SelectItem>
               <SelectItem value="title" className="cursor-pointer">
@@ -310,6 +379,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           </SelectContent>
         </Select>
 
+        {/* Filters */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -324,7 +394,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
               <Filter className="mr-2 h-4 w-4" />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-1 bg-brand text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {activeFiltersCount}
                 </span>
               )}
@@ -338,7 +408,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             className={cn(
               "w-80 bg-white",
               "border border-border-light",
-              "p-2 shadow-dropdown",
+              "p-2 shadow-xs",
               "min-h-55",
               "max-h-90 overflow-y-auto",
               "[scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.18)_transparent]",
@@ -356,11 +426,14 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className={separatorCls} />
 
-            {/* Favorites */}
             <DropdownMenuCheckboxItem
               checked={showFavoritesOnly}
               onCheckedChange={setShowFavoritesOnly}
-              className={cn(menuItemCls)}
+              className={cn(
+                menuItemCls,
+                "flex items-center justify-start text-left",
+                "pl-2 pr-2", // control padding
+              )}
             >
               <Star className="mr-2 h-4 w-4 fill-brand text-brand" />
               Favorites Only
@@ -374,7 +447,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                 </DropdownMenuLabel>
                 {cuisines.map((cuisine) => (
                   <DropdownMenuCheckboxItem
-                    key={cuisine}
+                    key={cuisine as string}
                     checked={selectedCuisines.includes(cuisine as string)}
                     onCheckedChange={(checked) => {
                       setSelectedCuisines(
@@ -385,7 +458,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                     }}
                     className={cn(menuItemCls)}
                   >
-                    {cuisine}
+                    {cuisine as string}
                   </DropdownMenuCheckboxItem>
                 ))}
               </>
@@ -399,7 +472,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                 </DropdownMenuLabel>
                 {difficulties.map((difficulty) => (
                   <DropdownMenuCheckboxItem
-                    key={difficulty}
+                    key={difficulty as string}
                     checked={selectedDifficulties.includes(
                       difficulty as string,
                     )}
@@ -414,7 +487,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                     }}
                     className={cn(menuItemCls, "capitalize")}
                   >
-                    {difficulty}
+                    {difficulty as string}
                   </DropdownMenuCheckboxItem>
                 ))}
               </>
@@ -428,7 +501,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                 </DropdownMenuLabel>
                 {categories.map((category) => (
                   <DropdownMenuCheckboxItem
-                    key={category}
+                    key={category as string}
                     checked={selectedCategories.includes(category as string)}
                     onCheckedChange={(checked) => {
                       setSelectedCategories(
@@ -439,7 +512,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                     }}
                     className={cn(menuItemCls)}
                   >
-                    {category}
+                    {category as string}
                   </DropdownMenuCheckboxItem>
                 ))}
               </>
@@ -453,7 +526,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                     variant="ghost"
                     size="sm"
                     onClick={clearAllFilters}
-                    className="w-full text-brand hover:text-brand hover:bg-brand-100 cursor-pointer"
+                    className="w-full text-brand bg-brand-100 hover:text-brand hover:bg-brand-200 cursor-pointer"
                   >
                     Clear all filters
                   </Button>
@@ -496,95 +569,8 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
         </div>
       </div>
 
-      {/* Active Filters Pills */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {showFavoritesOnly && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-brand-100 text-brand text-xs rounded-sm border border-brand-border">
-              <Star className="h-3 w-3 fill-brand" />
-              Favorites
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowFavoritesOnly(false)}
-                className="ml-1 h-4 w-4 p-0 hover:bg-transparent hover:text-text-primary cursor-pointer"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </span>
-          )}
-          {selectedCuisines.map((cuisine) => (
-            <span
-              key={cuisine}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-brand-100 text-text-primary text-xs rounded-sm border border-brand-border"
-            >
-              {cuisine}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setSelectedCuisines(
-                    selectedCuisines.filter((c) => c !== cuisine),
-                  )
-                }
-                className="ml-1 h-4 w-4 p-0 hover:bg-transparent hover:text-brand cursor-pointer"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </span>
-          ))}
-          {selectedDifficulties.map((difficulty) => (
-            <span
-              key={difficulty}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-brand-100 text-text-primary text-xs rounded-sm border border-brand-border capitalize"
-            >
-              {difficulty}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setSelectedDifficulties(
-                    selectedDifficulties.filter((d) => d !== difficulty),
-                  )
-                }
-                className="ml-1 h-4 w-4 p-0 hover:bg-transparent hover:text-brand cursor-pointer"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </span>
-          ))}
-          {selectedCategories.map((category) => (
-            <span
-              key={category}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-brand-100 text-text-primary text-xs rounded-sm border border-brand-border"
-            >
-              {category}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setSelectedCategories(
-                    selectedCategories.filter((c) => c !== category),
-                  )
-                }
-                className="ml-1 h-4 w-4 p-0 hover:bg-transparent hover:text-brand cursor-pointer"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </span>
-          ))}
-          <Button
-            variant="ghost"
-            onClick={clearAllFilters}
-            className="text-xs text-brand hover:text-text-primary font-medium h-auto p-0 hover:bg-transparent cursor-pointer"
-          >
-            Clear all
-          </Button>
-        </div>
-      )}
-
       {/* Results */}
-      {filteredRecipes.length === 0 ? (
+      {recipes.length === 0 && !isPending ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border-light rounded-md">
           <Search className="h-12 w-12 text-brand/30 mb-4" />
           <h3 className="text-base font-semibold mb-1">No recipes found</h3>
@@ -601,50 +587,23 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
         </div>
       ) : (
         <>
+          {/* Grid */}
           {viewMode === "grid" && (
             <div>
-              {Object.entries(
-                filteredRecipes.reduce(
-                  (groups, recipe) => {
-                    const date = new Date(recipe.createdAt);
-                    const today = new Date();
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-
-                    let group;
-                    if (date.toDateString() === today.toDateString()) {
-                      group = "Today";
-                    } else if (
-                      date.toDateString() === yesterday.toDateString()
-                    ) {
-                      group = "Yesterday";
-                    } else {
-                      group = date.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      });
-                    }
-
-                    if (!groups[group]) groups[group] = [];
-                    groups[group].push(recipe);
-                    return groups;
-                  },
-                  {} as Record<string, Recipe[]>,
-                ),
-              ).map(([group, recipes]) => (
+              {groupedRecipes.map(([group, groupRecipes]) => (
                 <div key={group} className="mb-8">
                   <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
                     {group}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-                    {recipes.map((recipe) => (
+                    {groupRecipes.map((recipe) => (
                       <RecipeCard key={recipe.id} {...recipe} />
                     ))}
                   </div>
                 </div>
               ))}
 
-              {/* Loading Skeletons for Grid */}
+              {/* Grid skeletons while loading */}
               {isPending && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr mt-6">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -655,47 +614,20 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             </div>
           )}
 
+          {/* Compact */}
           {viewMode === "compact" && (
             <div>
-              {Object.entries(
-                filteredRecipes.reduce(
-                  (groups, recipe) => {
-                    const date = new Date(recipe.createdAt);
-                    const today = new Date();
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-
-                    let group;
-                    if (date.toDateString() === today.toDateString()) {
-                      group = "Today";
-                    } else if (
-                      date.toDateString() === yesterday.toDateString()
-                    ) {
-                      group = "Yesterday";
-                    } else {
-                      group = date.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      });
-                    }
-
-                    if (!groups[group]) groups[group] = [];
-                    groups[group].push(recipe);
-                    return groups;
-                  },
-                  {} as Record<string, Recipe[]>,
-                ),
-              ).map(([group, recipes]) => (
+              {groupedRecipes.map(([group, groupRecipes]) => (
                 <div key={group} className="mb-8">
                   <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
                     {group}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {recipes.map((recipe) => (
+                    {groupRecipes.map((recipe) => (
                       <Link
                         key={recipe.id}
                         href={`/dashboard/recipes/${recipe.id}`}
-                        className="flex gap-2.5 bg-white rounded-sm p-2.5 hover:border-border-brand-subtle transition-colors border border-border-brand-light  cursor-pointer"
+                        className="flex gap-2.5 bg-white rounded-sm p-2.5 hover:border-border-brand-subtle transition-colors border border-border-brand-light cursor-pointer"
                       >
                         <div className="w-14 h-14 bg-brand-200 rounded-sm shrink-0 flex items-center justify-center overflow-hidden">
                           {recipe.imageUrl ? (
@@ -747,7 +679,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                 </div>
               ))}
 
-              {/* Loading Skeletons for Compact */}
+              {/* Compact skeletons while loading */}
               {isPending && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-6">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -758,25 +690,31 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             </div>
           )}
 
-          {/* Load More Button */}
-          {hasMore && !isPending && (
-            <div className="flex justify-center pt-6">
-              <Button
-                onClick={loadMore}
-                variant="brand-light"
-                className="cursor-pointer w-full py-5"
-              >
-                Load More Recipes
-              </Button>
+          {hasMore && <div ref={sentinelRef} className="h-10" />}
+
+          {hasMore && isPending && (
+            <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+              <div className="flex items-center gap-2 rounded-full bg-white border border-border-light px-4 py-2 shadow-sm">
+                <div className="h-4 w-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-text-secondary">
+                  Loading more recipes…
+                </span>
+              </div>
             </div>
           )}
 
-          {/* Loading indicator when loading more */}
-          {isPending && (
-            <div className="flex justify-center pt-6">
-              <div className="flex items-center gap-2 text-text-muted">
-                <div className="h-4 w-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Loading more recipes...</span>
+          {!hasMore && (
+            <div className="mt-10 rounded-md border border-dashed border-border-light bg-white p-4 text-center">
+              <p className="text-sm text-text-secondary">
+                You’re all caught up ✨
+              </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Button asChild variant="outline">
+                  <Link href="/dashboard/recipes/import">Import from URL</Link>
+                </Button>
+                <Button asChild variant="brand">
+                  <Link href="/dashboard/recipes/new">Add Recipe</Link>
+                </Button>
               </div>
             </div>
           )}

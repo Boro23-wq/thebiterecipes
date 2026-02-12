@@ -71,10 +71,7 @@ export function RecipeCard({
 
   return (
     <Link href={`/dashboard/recipes/${id}`}>
-      <div
-        className="overflow-hidden transition-all hover:border-border-brand-subtle cursor-pointer h-full rounded-sm bg-white relative border border-border-brand-light"
-        // style={{ boxShadow: "0 4px 16px 0 rgba(255, 107, 53, 0.08)" }}
-      >
+      <div className="overflow-hidden transition-all hover:border-border-brand-subtle cursor-pointer h-full rounded-sm bg-white relative border border-border-brand-light flex flex-col">
         {/* Badge */}
         {category && (
           <div className="absolute top-3 left-3 z-10">
@@ -103,18 +100,20 @@ export function RecipeCard({
           </div>
         </div>
 
-        <div className="p-4 space-y-3 bg-[#FFFAF7] flex-1 flex flex-col justify-between">
-          {/* Title */}
-          <h3 className="text-base font-semibold text-text-primary line-clamp-1">
-            {title}
-          </h3>
+        <div className="p-4 space-y-4 bg-[#FFFAF7] flex-1 flex flex-col justify-between">
+          <div className="space-y-1">
+            {/* Title */}
+            <h3 className="text-base font-semibold text-text-primary line-clamp-1">
+              {title}
+            </h3>
 
-          {/* Cuisine */}
-          {cuisine && (
+            {/* Cuisine */}
+            {/* {cuisine && ( */}
             <p className="text-sm text-text-secondary line-clamp-1">
-              {cuisine}
+              {cuisine ? cuisine : "Unknown"}
             </p>
-          )}
+            {/* )} */}
+          </div>
 
           {/* Metrics Row */}
           <div className="flex items-center gap-3 text-xs text-text-primary">
