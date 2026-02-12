@@ -19,6 +19,7 @@ export const recipes = pgTable(
 
     // Core recipe info
     title: text("title").notNull(),
+    description: text("description"),
     imageUrl: text("image_url"),
 
     // Recipe details
@@ -26,7 +27,7 @@ export const recipes = pgTable(
     prepTime: integer("prep_time"),
     cookTime: integer("cook_time"),
     totalTime: integer("total_time"),
-    difficulty: text("difficulty"), // Consider enum in production
+    difficulty: text("difficulty"),
     cuisine: text("cuisine"),
     category: text("category"),
 
@@ -94,11 +95,22 @@ export const recipeTags = pgTable("recipe_tags", {
     .notNull(),
 });
 
+// Recipe images (one-to-many)
+export const recipeImages = pgTable("recipe_images", {
+  id: serial("id").primaryKey(),
+  recipeId: uuid("recipe_id")
+    .references(() => recipes.id, { onDelete: "cascade" })
+    .notNull(),
+  imageUrl: text("image_url").notNull(),
+  order: integer("order").notNull(), // Display order (0 = primary)
+});
+
 // Relations (for Drizzle queries)
 export const recipesRelations = relations(recipes, ({ many }) => ({
   ingredients: many(recipeIngredients),
   instructions: many(recipeInstructions),
   tags: many(recipeTags),
+  images: many(recipeImages),
 }));
 
 export const recipeIngredientsRelations = relations(
@@ -133,6 +145,13 @@ export const recipeTagsRelations = relations(recipeTags, ({ one }) => ({
   tag: one(tags, {
     fields: [recipeTags.tagId],
     references: [tags.id],
+  }),
+}));
+
+export const recipeImagesRelations = relations(recipeImages, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeImages.recipeId],
+    references: [recipes.id],
   }),
 }));
 
@@ -179,3 +198,25 @@ export const recipeCategoriesRelations = relations(
     }),
   }),
 );
+
+export const userPreferences = pgTable("user_preferences", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().unique(),
+
+  // Preferences
+  measurementUnit: text("measurement_unit").default("imperial"), // imperial or metric
+  defaultServings: integer("default_servings").default(4),
+  language: text("language").default("en"),
+  timeFormat: text("time_format").default("12"), // 12 or 24
+  defaultViewMode: text("default_view_mode").default("grid"), // grid or compact
+
+  // Notifications
+  emailNotifications: boolean("email_notifications").default(true),
+  weeklyDigest: boolean("weekly_digest").default(false),
+  recipeReminders: boolean("recipe_reminders").default(false),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

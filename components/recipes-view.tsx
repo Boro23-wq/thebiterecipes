@@ -20,6 +20,7 @@ import {
   Search,
   Filter,
   X,
+  LinkIcon,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -220,12 +221,20 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           </p>
         </div>
 
-        <Button asChild variant="brand">
-          <Link href="/dashboard/recipes/new">
-            <Plus className="h-4 w-4" />
-            Add Recipe
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/dashboard/recipes/import">
+              <LinkIcon className="h-4 w-4" />
+              Import from URL
+            </Link>
+          </Button>
+          <Button asChild variant="brand">
+            <Link href="/dashboard/recipes/new">
+              <Plus className="h-4 w-4" />
+              Add Recipe
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters Bar */}

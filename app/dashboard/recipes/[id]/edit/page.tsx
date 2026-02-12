@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ImagePlus } from "lucide-react";
 import Link from "next/link";
-import { text, spacing, input, icon, layout } from "@/lib/design-tokens";
+import { text, spacing, input, layout } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
+import { RecipeImagesPickerSlots } from "@/components/recipe-images-picker";
 
 export default async function EditRecipePage({
   params,
@@ -36,6 +36,7 @@ export default async function EditRecipePage({
       instructions: {
         orderBy: (instructions, { asc }) => [asc(instructions.order)],
       },
+      images: { orderBy: (images, { asc }) => [asc(images.order)] },
     },
   });
 
@@ -63,34 +64,6 @@ export default async function EditRecipePage({
 
   return (
     <div className="min-h-screen">
-      {/* Cover Image Upload Section */}
-      <div className="relative w-full h-64 bg-brand-200">
-        <label
-          htmlFor="cover-image"
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-brand-300 transition-colors group"
-        >
-          <ImagePlus
-            className={cn(
-              icon.xlarge,
-              "text-brand/40 group-hover:text-brand/60 transition-colors",
-            )}
-          />
-          <span className={cn(text.body, "mt-2")}>
-            Click to upload cover image
-          </span>
-          <span className={cn(text.muted, "mt-1")}>
-            JPG, PNG or WebP (Max 5MB)
-          </span>
-        </label>
-        <input
-          id="cover-image"
-          name="coverImage"
-          type="file"
-          accept="image/*"
-          className="hidden"
-        />
-      </div>
-
       {/* Form Content */}
       <div className={cn(layout.containerSmall, "py-6", spacing.section)}>
         {/* Header */}
@@ -104,6 +77,13 @@ export default async function EditRecipePage({
         </div>
 
         <form action={updateRecipeWithId} className={spacing.section}>
+          <RecipeImagesPickerSlots
+            existingImages={recipe.images.map((img) => ({
+              id: img.id,
+              imageUrl: img.imageUrl,
+            }))}
+          />
+
           {/* Basic Info Section */}
           <div className={spacing.form}>
             <h2 className={text.h2}>Basic Information</h2>
@@ -120,6 +100,21 @@ export default async function EditRecipePage({
                 defaultValue={recipe.title}
                 placeholder="e.g. Grandma's Pasta"
                 className={input.base}
+              />
+            </div>
+
+            {/* Description */}
+            <div className={spacing.tight}>
+              <Label htmlFor="description" className={text.label}>
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                rows={3}
+                defaultValue={recipe.description || ""}
+                placeholder="Short summary of the recipe..."
+                className={cn(input.base, "resize-none")}
               />
             </div>
 
@@ -376,7 +371,7 @@ export default async function EditRecipePage({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
-            <Button type="submit" variant="brand">
+            <Button className="cursor-pointer" type="submit" variant="brand">
               Update Recipe
             </Button>
             <Button type="button" variant="outline" asChild>

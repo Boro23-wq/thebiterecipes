@@ -4,6 +4,7 @@ import { Clock, Users, Star, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FavoriteButton } from "./favorite-button";
+import { recipeImageSrc } from "@/lib/recipe-image";
 
 interface RecipeCardProps {
   id: string;
@@ -38,6 +39,8 @@ export function RecipeCard({
   rating,
   createdAt,
 }: RecipeCardProps) {
+  const src = recipeImageSrc(imageUrl, { mode: "stored" });
+
   const displayTime =
     totalTime ||
     (prepTime && cookTime ? prepTime + cookTime : prepTime || cookTime);
@@ -83,9 +86,9 @@ export function RecipeCard({
 
         {/* Image Section - 60% */}
         <div className="h-52 w-full bg-[#FFF4ED] flex items-center justify-center relative">
-          {imageUrl ? (
+          {src ? (
             <Image
-              src={imageUrl}
+              src={src}
               alt={title}
               fill
               className="object-cover"
