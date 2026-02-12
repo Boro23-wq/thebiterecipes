@@ -51,7 +51,7 @@ export function DeleteDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className="mt-4">
           <AlertDialogCancel className="cursor-pointer">
             Cancel
           </AlertDialogCancel>
