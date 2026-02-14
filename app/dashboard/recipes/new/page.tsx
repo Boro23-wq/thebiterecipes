@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ImagePlus } from "lucide-react";
 import Link from "next/link";
 import { text, spacing, input, layout } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { RecipeImagesPickerSlots } from "@/components/recipe-images-picker";
+import { FormSubmitButton } from "@/components/form-submit";
 
 export default async function NewRecipePage() {
   const user = await currentUser();
@@ -309,13 +309,15 @@ export default async function NewRecipePage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button className="cursor-pointer" type="submit" variant="brand">
-                Save Recipe
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/dashboard">Cancel</Link>
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <FormSubmitButton loadingText="Saving recipe...">
+                  Save Recipe
+                </FormSubmitButton>
+                <Button type="button" variant="outline" asChild>
+                  <Link href="/dashboard">Cancel</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

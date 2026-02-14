@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Clock, TrendingUp, Star } from "lucide-react";
+import {
+  Users,
+  Clock,
+  TrendingUp,
+  Star,
+  Activity,
+  Wheat,
+  Droplet,
+} from "lucide-react";
 import { CardSm } from "@/components/ui/card-wrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IngredientsList } from "@/components/ingredients-list";
@@ -101,7 +109,10 @@ export function RecipeDetailClient({
 
             {recipe.protein && (
               <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-                <span className="text-xs text-text-secondary">Protein</span>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Activity className={icon.base} />
+                  <span className="text-xs">Protein</span>
+                </div>
                 <span className="text-lg font-semibold text-text-primary">
                   {Math.round(recipe.protein * servingMultiplier)}g
                 </span>
@@ -110,7 +121,10 @@ export function RecipeDetailClient({
 
             {recipe.carbs && (
               <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-                <span className="text-xs text-text-secondary">Carbs</span>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Wheat className={icon.base} />
+                  <span className="text-xs">Carbs</span>
+                </div>
                 <span className="text-lg font-semibold text-text-primary">
                   {Math.round(recipe.carbs * servingMultiplier)}g
                 </span>
@@ -119,7 +133,10 @@ export function RecipeDetailClient({
 
             {recipe.fat && (
               <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-                <span className="text-xs text-text-secondary">Fat</span>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Droplet className={icon.base} />
+                  <span className="text-xs">Fat</span>
+                </div>
                 <span className="text-lg font-semibold text-text-primary">
                   {Math.round(recipe.fat * servingMultiplier)}g
                 </span>

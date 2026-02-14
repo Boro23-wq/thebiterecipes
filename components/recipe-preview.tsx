@@ -37,6 +37,7 @@ interface RecipePreviewProps {
 }
 
 export function RecipePreview({ recipe }: RecipePreviewProps) {
+  console.log("PREVIEW imageUrls:", recipe.imageUrls);
   return (
     <div className="bg-white rounded-sm border border-border-light overflow-hidden">
       {/* Header with Image */}

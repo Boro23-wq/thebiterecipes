@@ -12,36 +12,7 @@ import { redirect } from "next/navigation";
 import { ilike, desc, asc, sql, and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { UTApi } from "uploadthing/server";
-
-// Helper function to parse ingredient line into amount and ingredient
-function parseIngredient(line: string): {
-  amount: string | null;
-  ingredient: string;
-} {
-  const match = line.match(
-    /^([\d\/\.\s]+(cups?|cup|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|lb|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l|pinch|dash|cloves?|pieces?|slices?)?)\s+(.+)$/i,
-  );
-
-  if (match) {
-    return {
-      amount: match[1].trim(),
-      ingredient: match[3].trim(),
-    };
-  }
-
-  const simpleMatch = line.match(/^([\d\/\.\s]+)\s+(.+)$/);
-  if (simpleMatch) {
-    return {
-      amount: simpleMatch[1].trim(),
-      ingredient: simpleMatch[2].trim(),
-    };
-  }
-
-  return {
-    amount: null,
-    ingredient: line.trim(),
-  };
-}
+import { parseIngredient } from "@/lib/parse-ingredient";
 
 /**
  * Uploads up to 3 images from multipart FormData ("images" field).

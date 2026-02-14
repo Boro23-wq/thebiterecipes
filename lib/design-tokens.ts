@@ -18,8 +18,8 @@ export const text = {
   // Body text
   body: "text-sm text-text-primary",
   bodyLarge: "text-base text-text-primary",
-  small: "text-xs text-text-secondary",
-  muted: "text-xs text-text-muted",
+  small: "text-sm text-text-secondary",
+  muted: "text-sm text-text-muted",
 
   // Special
   label: "text-sm font-medium text-text-primary",
@@ -29,7 +29,7 @@ export const card = {
   base: "bg-white rounded-md shadow-brand",
   baseSm: "bg-white rounded-md shadow-brand-sm",
   stats:
-    "bg-brand-100 hover:bg-brand-200 transition-colors p-4 rounded-sm cursor-pointer",
+    "bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-4 rounded-sm cursor-pointer",
   content: "bg-brand-100 p-4 rounded-sm",
   hover: "hover:shadow-brand-sm transition-all",
 } as const;
@@ -37,7 +37,7 @@ export const card = {
 export const layout = {
   page: "min-h-screen",
   container: "max-w-5xl mx-auto px-6",
-  containerSmall: "max-w-3xl mx-auto px-6",
+  containerSmall: "max-w-3xl mx-auto px-0 sm:px-6",
   grid2: "grid grid-cols-1 md:grid-cols-2 gap-4",
   grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
   grid4: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3",

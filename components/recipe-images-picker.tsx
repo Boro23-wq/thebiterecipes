@@ -55,23 +55,31 @@ export function RecipeImagesPickerSlots({
     return base;
   });
 
-  // If existingImages changes, only re-init when user hasn't selected new files
+  // ✅ FIX: Only update slots if existingImages actually changes the URLs
+  // This prevents "Maximum update depth exceeded" when parent passes a new array each render.
   React.useEffect(() => {
     setSlots((prev) => {
       const hasNew = prev.some((s) => s.isNew);
       if (hasNew) return prev;
 
-      const base: Slot[] = Array.from({ length: 3 }).map(() => ({
+      const next: Slot[] = Array.from({ length: 3 }).map(() => ({
         file: null,
         previewUrl: null,
         isNew: false,
       }));
 
       existingImages.slice(0, 3).forEach((img, idx) => {
-        base[idx] = { file: null, previewUrl: img.imageUrl, isNew: false };
+        next[idx] = { file: null, previewUrl: img.imageUrl, isNew: false };
       });
 
-      return base;
+      const prevUrls = prev.map((s) => s.previewUrl ?? "");
+      const nextUrls = next.map((s) => s.previewUrl ?? "");
+
+      const same =
+        prevUrls.length === nextUrls.length &&
+        prevUrls.every((u, i) => u === nextUrls[i]);
+
+      return same ? prev : next;
     });
   }, [existingImages]);
 
@@ -222,28 +230,29 @@ export function RecipeImagesPickerSlots({
 
   return (
     <div className="w-full">
-      <div className="flex items-end justify-between mb-2">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-2">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-text-primary">{title}</p>
           <p className={cn(text.muted, "text-xs")}>
             {helper} • Max {maxSizeMB}MB each
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => multiInputRef.current?.click()}
-            className="text-xs cursor-pointer"
+            className="text-xs cursor-pointer w-full sm:w-auto whitespace-nowrap"
           >
             Change images
           </Button>
+
           <Button
             type="button"
             variant="destructive"
             onClick={clearAll}
-            className="text-xs cursor-pointer"
+            className="text-xs cursor-pointer w-full sm:w-auto whitespace-nowrap"
           >
             Clear all
           </Button>

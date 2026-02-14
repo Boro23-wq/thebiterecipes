@@ -12,6 +12,7 @@ import Link from "next/link";
 import { text, spacing, input, layout } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { RecipeImagesPickerSlots } from "@/components/recipe-images-picker";
+import { FormSubmitButton } from "@/components/form-submit";
 
 export default async function EditRecipePage({
   params,
@@ -370,10 +371,10 @@ export default async function EditRecipePage({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-            <Button className="cursor-pointer" type="submit" variant="brand">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <FormSubmitButton loadingText="Updating recipe...">
               Update Recipe
-            </Button>
+            </FormSubmitButton>
             <Button type="button" variant="outline" asChild>
               <Link href={`/dashboard/recipes/${recipe.id}`}>Cancel</Link>
             </Button>

@@ -268,12 +268,11 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-text-primary">
             My Recipes
           </h1>
-
           <p className="text-sm text-text-secondary mt-1">
             {recipes.length} of{" "}
             {activeFiltersCount > 0 || debouncedSearch
@@ -290,14 +289,15 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
+        <div className="hidden sm:flex items-center gap-2">
+          <Button asChild variant="outline" className="whitespace-nowrap">
             <Link href="/dashboard/recipes/import">
               <LinkIcon className="h-4 w-4" />
               Import from URL
             </Link>
           </Button>
-          <Button asChild variant="brand">
+
+          <Button asChild variant="brand" className="whitespace-nowrap">
             <Link href="/dashboard/recipes/new">
               <Plus className="h-4 w-4" />
               Add Recipe
@@ -306,10 +306,59 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
         </div>
       </div>
 
+      {/* Mobile actions row (buttons + view switcher) */}
+      <div className="flex items-center justify-between sm:hidden">
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="whitespace-nowrap">
+            <Link href="/dashboard/recipes/import">
+              <LinkIcon className="h-4 w-4" />
+            </Link>
+          </Button>
+
+          <Button asChild variant="brand" className="whitespace-nowrap">
+            <Link href="/dashboard/recipes/new">
+              <Plus className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="inline-flex w-fit shrink-0 items-center bg-brand-50 rounded-sm p-1 gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewMode("grid")}
+            className={cn(
+              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
+              viewMode === "grid"
+                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
+                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
+            )}
+            title="Grid View"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewMode("compact")}
+            className={cn(
+              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
+              viewMode === "compact"
+                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
+                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
+            )}
+            title="Compact View"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Search and Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder="Search recipes, cuisines, categories..."
@@ -536,8 +585,8 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* View Mode Switcher */}
-        <div className="flex items-center bg-brand-50 rounded-sm p-1 gap-1">
+        {/* View Mode Switcher (desktop only) */}
+        <div className="hidden sm:inline-flex w-fit shrink-0 items-center bg-brand-50 rounded-sm p-1 gap-1">
           <Button
             variant="ghost"
             size="icon"

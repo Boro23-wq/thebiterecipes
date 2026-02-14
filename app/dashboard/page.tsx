@@ -115,7 +115,7 @@ export default async function DashboardPage() {
         </StatsCard>
 
         {/* Quick Action */}
-        <div className="flex flex-col justify-between bg-brand-100 hover:bg-brand-200 transition-colors p-4 rounded-sm cursor-pointer">
+        <div className="flex flex-col justify-between bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-4 rounded-sm cursor-pointer">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-text-secondary">
               Quick Action

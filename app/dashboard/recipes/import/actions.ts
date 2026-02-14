@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import * as cheerio from "cheerio";
 import { uploadRemoteImageToUploadThing } from "@/lib/upload-remote-image";
+import { parseIngredient } from "@/lib/parse-ingredient";
 
 interface ParsedRecipe {
   title: string;
@@ -63,6 +64,8 @@ interface RecipeInstruction {
   name?: string;
   itemListElement?: RecipeInstruction[];
 }
+
+/* ----------------------------- JSON-LD helpers ---------------------------- */
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null;
@@ -117,16 +120,6 @@ const findRecipeInJsonLd = (json: unknown): RecipeSchema | null => {
   return null;
 };
 
-const parseDuration = (duration?: string): number | undefined => {
-  if (!duration) return undefined;
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-  if (!match) return undefined;
-  const hours = parseInt(match[1] || "0", 10);
-  const minutes = parseInt(match[2] || "0", 10);
-  const total = hours * 60 + minutes;
-  return Number.isFinite(total) ? total : undefined;
-};
-
 const toStringArray = (v: unknown): string[] => {
   if (!v) return [];
   if (typeof v === "string") return v.trim() ? [v.trim()] : [];
@@ -163,27 +156,14 @@ const extractInstructionText = (inst: unknown): string[] => {
   return [];
 };
 
-const extractImageUrls = (image: RecipeSchema["image"]): string[] => {
-  if (!image) return [];
-
-  const urls: string[] = [];
-
-  if (typeof image === "string") {
-    urls.push(image);
-  } else if (Array.isArray(image)) {
-    for (const item of image) {
-      if (typeof item === "string") {
-        urls.push(item);
-      } else if (isObject(item) && typeof item.url === "string") {
-        urls.push(item.url);
-      }
-      if (urls.length >= 3) break; // Take max 3
-    }
-  } else if (isObject(image) && typeof image.url === "string") {
-    urls.push(image.url);
-  }
-
-  return urls.slice(0, 3); // Ensure max 3
+const parseDuration = (duration?: string): number | undefined => {
+  if (!duration) return undefined;
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!match) return undefined;
+  const hours = parseInt(match[1] || "0", 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const total = hours * 60 + minutes;
+  return Number.isFinite(total) ? total : undefined;
 };
 
 const extractServings = (
@@ -209,13 +189,107 @@ const extractCalories = (cal: unknown): number | undefined => {
 
 const extractGrams = (content: unknown): number | undefined => {
   if (content == null) return undefined;
+
   const str = String(content);
-  // Match numbers before 'g' or just plain numbers
-  const match = str.match(/(\d+(?:\.\d+)?)\s*g?/);
+
+  // Match numbers like:
+  // "11g"
+  // "11 g"
+  // "11.5g"
+  // or just "11"
+  const match = str.match(/(\d+(?:\.\d+)?)/);
+
   if (!match) return undefined;
+
   const n = parseFloat(match[1]);
   return Number.isFinite(n) ? Math.round(n) : undefined;
 };
+
+/* --------------------------- Image selection logic ------------------------ */
+/**
+ * Fixes “same image 3 times” (NYT etc.) where they give multiple sizes/crops.
+ * We group by folder and pick the best candidate per folder.
+ */
+
+const imageFolderKey = (u: string) => {
+  try {
+    const url = new URL(u);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const folder = parts.slice(0, -1).join("/");
+    return `${url.origin}/${folder}`;
+  } catch {
+    const idx = u.lastIndexOf("/");
+    return idx > 0 ? u.slice(0, idx) : u;
+  }
+};
+
+const scoreImageUrl = (u: string) => {
+  const s = u.toLowerCase();
+  let score = 0;
+
+  // NYT-ish patterns (prefer big)
+  if (s.includes("jumbo")) score += 50;
+  if (s.includes("video")) score += 10;
+  if (s.includes("largeat2x")) score += 35;
+  if (s.includes("threebytwo")) score += 15;
+  if (s.includes("mediumsquare")) score += 5;
+
+  if (s.endsWith(".jpg") || s.endsWith(".jpeg")) score += 2;
+  if (s.endsWith(".png")) score += 1;
+
+  return score;
+};
+
+const pickBestPerFolder = (urls: string[], max: number) => {
+  const byFolder = new Map<string, string[]>();
+
+  for (const u of urls) {
+    const trimmed = (u ?? "").trim();
+    if (!trimmed) continue;
+
+    const key = imageFolderKey(trimmed);
+    const list = byFolder.get(key) ?? [];
+    list.push(trimmed);
+    byFolder.set(key, list);
+  }
+
+  const picked: string[] = [];
+  for (const [, list] of byFolder) {
+    const best = [...list].sort(
+      (a, b) => scoreImageUrl(b) - scoreImageUrl(a),
+    )[0];
+    if (best) picked.push(best);
+  }
+
+  return picked.slice(0, max);
+};
+
+const extractImageUrls = (image: RecipeSchema["image"]): string[] => {
+  if (!image) return [];
+
+  const raw: string[] = [];
+  const pushUrl = (u: unknown) => {
+    if (typeof u !== "string") return;
+    const t = u.trim();
+    if (t) raw.push(t);
+  };
+
+  if (typeof image === "string") {
+    pushUrl(image);
+  } else if (Array.isArray(image)) {
+    for (const item of image) {
+      if (typeof item === "string") pushUrl(item);
+      else if (isObject(item) && typeof item.url === "string")
+        pushUrl(item.url);
+    }
+  } else if (isObject(image) && typeof image.url === "string") {
+    pushUrl(image.url);
+  }
+
+  return pickBestPerFolder(raw, 3);
+};
+
+/* -------------------------------- Actions -------------------------------- */
 
 export async function parseRecipeUrl(
   url: string,
@@ -226,14 +300,13 @@ export async function parseRecipeUrl(
       cache: "no-store",
     });
 
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error(`Failed to fetch recipe: ${response.status}`);
+    }
 
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // IMPORTANT: avoid cheerio .each() mutation (TS narrowing issue).
-    // Collect script contents then loop normally.
     const jsonLdBlocks: string[] = [];
     $('script[type="application/ld+json"]').each((_, el) => {
       const raw = $(el).contents().text();
@@ -267,9 +340,7 @@ export async function parseRecipeUrl(
     const imageUrls = extractImageUrls(recipeData.image);
 
     let combinedNotes = "";
-    if (recipeData.description) {
-      combinedNotes = recipeData.description;
-    }
+    if (recipeData.description) combinedNotes = recipeData.description;
     if (recipeData.recipeNotes) {
       combinedNotes = combinedNotes
         ? `${combinedNotes}\n\nCook's Note:\n${recipeData.recipeNotes}`
@@ -306,16 +377,15 @@ export async function importRecipe(data: ParsedRecipe) {
   const user = await currentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const hostedImageUrls: string[] = [];
+  const pickedImageUrls = pickBestPerFolder(data.imageUrls ?? [], 3);
 
-  if (data.imageUrls && data.imageUrls.length > 0) {
-    for (const url of data.imageUrls) {
-      try {
-        const hosted = await uploadRemoteImageToUploadThing(url);
-        hostedImageUrls.push(hosted);
-      } catch (e) {
-        console.error("Image upload failed for", url, e);
-      }
+  const hostedImageUrls: string[] = [];
+  for (const url of pickedImageUrls) {
+    try {
+      const hosted = await uploadRemoteImageToUploadThing(url);
+      hostedImageUrls.push(hosted);
+    } catch (e) {
+      console.error("Image upload failed for", url, e);
     }
   }
 
@@ -324,30 +394,28 @@ export async function importRecipe(data: ParsedRecipe) {
     .values({
       userId: user.id,
       title: data.title,
-      imageUrl: hostedImageUrls[0],
-      prepTime: data.prepTime,
-      cookTime: data.cookTime,
+      imageUrl: hostedImageUrls[0] ?? null,
+      prepTime: data.prepTime ?? null,
+      cookTime: data.cookTime ?? null,
       totalTime:
-        data.totalTime ||
-        (data.prepTime && data.cookTime
-          ? data.prepTime + data.cookTime
-          : undefined),
-      servings: data.servings,
-      cuisine: data.cuisine,
-      category: data.category,
-      calories: data.calories,
-      protein: data.protein,
-      carbs: data.carbs,
-      fat: data.fat,
-      notes: data.notes,
-      source: data.source,
+        data.totalTime ??
+        (data.prepTime && data.cookTime ? data.prepTime + data.cookTime : null),
+      servings: data.servings ?? null,
+      cuisine: data.cuisine ?? null,
+      category: data.category ?? null,
+      calories: data.calories ?? null,
+      protein: data.protein ?? null,
+      carbs: data.carbs ?? null,
+      fat: data.fat ?? null,
+      notes: data.notes ?? null,
+      source: data.source ?? null,
     })
     .returning();
 
-  // Save all images to recipeImages table
+  // Images table
   if (hostedImageUrls.length > 0) {
     await db.insert(recipeImages).values(
-      hostedImageUrls.map((imageUrl, index) => ({
+      hostedImageUrls.slice(0, 3).map((imageUrl, index) => ({
         recipeId: recipe.id,
         imageUrl,
         order: index,
@@ -355,24 +423,34 @@ export async function importRecipe(data: ParsedRecipe) {
     );
   }
 
-  // Ingredients
-  if (data.ingredients.length > 0) {
+  // Ingredients (parse amount so UI can bold quantities)
+  const ingredientLines = (data.ingredients ?? [])
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ingredientLines.length > 0) {
     await db.insert(recipeIngredients).values(
-      data.ingredients.map((ingredient, index) => ({
-        recipeId: recipe.id,
-        ingredient,
-        order: index,
-      })),
+      ingredientLines.map((line, index) => {
+        const { amount, ingredient } = parseIngredient(line);
+        return {
+          recipeId: recipe.id,
+          amount: amount || null,
+          ingredient,
+          order: index + 1,
+        };
+      }),
     );
   }
 
   // Instructions
-  if (data.instructions.length > 0) {
+  const instructionLines = (data.instructions ?? [])
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (instructionLines.length > 0) {
     await db.insert(recipeInstructions).values(
-      data.instructions.map((stepText, index) => ({
+      instructionLines.map((stepText, index) => ({
         recipeId: recipe.id,
         step: stepText,
-        order: index,
+        order: index + 1,
       })),
     );
   }
