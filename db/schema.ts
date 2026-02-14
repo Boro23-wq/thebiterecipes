@@ -180,6 +180,106 @@ export const recipeCategories = pgTable("recipe_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Meal Plans (one per week or custom date range)
+export const mealPlans = pgTable("meal_plans", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+
+  // Week identification
+  startDate: timestamp("start_date").notNull(), // Monday 00:00
+  endDate: timestamp("end_date").notNull(), // Sunday 23:59
+
+  name: text("name"), // Optional: "Week of Jan 15", "Meal Prep Marathon"
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Recipes assigned to specific meals
+export const mealPlanRecipes = pgTable(
+  "meal_plan_recipes",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    mealPlanId: text("meal_plan_id")
+      .notNull()
+      .references(() => mealPlans.id, { onDelete: "cascade" }),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+
+    // When & what meal
+    date: timestamp("date").notNull(), // Specific day (2025-01-15 00:00)
+    mealType: text("meal_type").notNull(), // "breakfast" | "lunch" | "dinner" | "snack"
+
+    // Servings override
+    customServings: integer("custom_servings"), // null = use recipe default
+
+    // Optional notes
+    notes: text("notes"), // "Double batch for leftovers"
+
+    // Order (for multiple recipes in same meal slot)
+    order: integer("order").default(0).notNull(),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    // Prevent duplicate recipe in same meal slot
+    uniqueMealSlot: sql`UNIQUE(meal_plan_id, date, meal_type, recipe_id)`,
+  }),
+);
+
+// Grocery list (one per meal plan)
+export const groceryLists = pgTable("grocery_lists", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  mealPlanId: text("meal_plan_id")
+    .notNull()
+    .unique()
+    .references(() => mealPlans.id, { onDelete: "cascade" }),
+
+  // Track staleness
+  lastGeneratedAt: timestamp("last_generated_at"),
+  isStale: boolean("is_stale").default(false).notNull(), // true when recipes change
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Individual grocery items
+export const groceryListItems = pgTable("grocery_list_items", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  groceryListId: text("grocery_list_id")
+    .notNull()
+    .references(() => groceryLists.id, { onDelete: "cascade" }),
+
+  // Ingredient info
+  ingredient: text("ingredient").notNull(), // "whole milk"
+  amount: text("amount"), // "3.5 cups" (combined)
+  unit: text("unit"), // "cups" (normalized)
+
+  // Traceability
+  recipeIds: text("recipe_ids"), // JSON array: ["uuid1","uuid2"]
+  isManual: boolean("is_manual").default(false).notNull(),
+
+  // Shopping state
+  isChecked: boolean("is_checked").default(false).notNull(),
+  checkedAt: timestamp("checked_at"),
+
+  // Organization
+  category: text("category"), // "dairy" | "produce" | "meat" | "pantry" | "other"
+  order: integer("order").default(0).notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Add relations
 export const categoriesRelations = relations(categories, ({ many }) => ({
   recipeCategories: many(recipeCategories),
@@ -195,6 +295,46 @@ export const recipeCategoriesRelations = relations(
     category: one(categories, {
       fields: [recipeCategories.categoryId],
       references: [categories.id],
+    }),
+  }),
+);
+
+export const mealPlansRelations = relations(mealPlans, ({ many, one }) => ({
+  mealPlanRecipes: many(mealPlanRecipes),
+  groceryList: one(groceryLists),
+}));
+
+export const mealPlanRecipesRelations = relations(
+  mealPlanRecipes,
+  ({ one }) => ({
+    mealPlan: one(mealPlans, {
+      fields: [mealPlanRecipes.mealPlanId],
+      references: [mealPlans.id],
+    }),
+    recipe: one(recipes, {
+      fields: [mealPlanRecipes.recipeId],
+      references: [recipes.id],
+    }),
+  }),
+);
+
+export const groceryListsRelations = relations(
+  groceryLists,
+  ({ one, many }) => ({
+    mealPlan: one(mealPlans, {
+      fields: [groceryLists.mealPlanId],
+      references: [mealPlans.id],
+    }),
+    items: many(groceryListItems),
+  }),
+);
+
+export const groceryListItemsRelations = relations(
+  groceryListItems,
+  ({ one }) => ({
+    groceryList: one(groceryLists, {
+      fields: [groceryListItems.groceryListId],
+      references: [groceryLists.id],
     }),
   }),
 );
