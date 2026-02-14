@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     // allow your single hosted CDN
     remotePatterns: [
       { protocol: "https", hostname: "utfs.io", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 };

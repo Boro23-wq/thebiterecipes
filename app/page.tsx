@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  ChefHat,
   BookOpen,
   Star,
   Clock,
@@ -14,6 +13,7 @@ import {
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
+import Image from "next/image";
 
 export default async function LandingPage() {
   const user = await currentUser();
@@ -56,7 +56,7 @@ export default async function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-4xl mx-auto space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 rounded-full">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 border border-border-brand-light rounded-full">
               <Sparkles className="h-4 w-4 text-brand" />
               <span className="text-sm font-medium text-text-primary">
                 Your personal recipe companion
@@ -72,8 +72,8 @@ export default async function LandingPage() {
 
             {/* Subheadline */}
             <p className="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
-              Organize your favorite recipes, discover new dishes, and make
-              every meal memorable. Your digital cookbook that actually works.
+              Organize your favorite recipes, import new dishes, and make every
+              meal memorable. Your digital cookbook that actually works.
             </p>
 
             {/* CTA Buttons */}
@@ -117,25 +117,65 @@ export default async function LandingPage() {
           </div>
 
           {/* Hero Image/Mockup */}
-          <div className="mt-20 relative">
-            <div className="absolute inset-0 bg-linear-to-t from-white via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-100 max-w-5xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Mock recipe cards */}
-                {mockRecipes.map((recipe, i) => (
+          <div className="mt-20">
+            <div
+              className="max-w-6xl mx-auto overflow-hidden rounded-sm"
+              style={{
+                WebkitMaskImage: `
+                  linear-gradient(to right,
+                    transparent 0%,
+                    black 18%,
+                    black 82%,
+                    transparent 100%
+                  ),
+                  linear-gradient(to top,
+                    transparent 0%,
+                    black 35%,
+                    black 100%
+                  )
+                `,
+                WebkitMaskComposite: "source-in",
+                maskImage: `
+                  linear-gradient(to right,
+                    transparent 0%,
+                    black 18%,
+                    black 82%,
+                    transparent 100%
+                  ),
+                  linear-gradient(to top,
+                    transparent 0%,
+                    black 35%,
+                    black 100%
+                  )
+                `,
+                maskComposite: "intersect",
+              }}
+            >
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {heroRecipes.map((recipe, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-md overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
+                    className={`
+                        rounded-sm overflow-hidden bg-white/90
+                        shadow-[0_8px_24px_rgba(0,0,0,0.06)]
+                      `}
                   >
-                    <div
-                      className={`h-32 ${recipe.bgColor} flex items-center justify-center`}
-                    >
-                      <recipe.icon className="h-16 w-16 text-brand/30" />
+                    <div className="relative h-40">
+                      <Image
+                        src={recipe.imageUrl}
+                        alt={recipe.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        priority={i === 0}
+                      />
                     </div>
+
                     <div className="p-4 space-y-2">
-                      <h3 className="font-semibold text-text-primary text-sm">
+                      <h3 className="font-semibold text-text-primary text-sm line-clamp-1">
                         {recipe.title}
                       </h3>
+
                       <div className="flex items-center gap-4 text-xs text-text-secondary">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -160,20 +200,31 @@ export default async function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-brand mb-2">1000+</div>
-              <div className="text-text-secondary">Active Users</div>
+              <div className="text-3xl sm:text-4xl font-bold text-brand mb-2">
+                Unlimited
+              </div>
+              <div className="text-text-secondary">Recipes</div>
             </div>
+
             <div>
-              <div className="text-4xl font-bold text-brand mb-2">5000+</div>
-              <div className="text-text-secondary">Recipes Saved</div>
+              <div className="text-3xl sm:text-4xl font-bold text-brand mb-2">
+                Private
+              </div>
+              <div className="text-text-secondary">By default</div>
             </div>
+
             <div>
-              <div className="text-4xl font-bold text-brand mb-2">4.8★</div>
-              <div className="text-text-secondary">User Rating</div>
+              <div className="text-3xl sm:text-4xl font-bold text-brand mb-2">
+                1-click
+              </div>
+              <div className="text-text-secondary">Save favorites</div>
             </div>
+
             <div>
-              <div className="text-4xl font-bold text-brand mb-2">100%</div>
-              <div className="text-text-secondary">Free to Use</div>
+              <div className="text-3xl sm:text-4xl font-bold text-brand mb-2">
+                Free
+              </div>
+              <div className="text-text-secondary">While in beta</div>
             </div>
           </div>
         </div>
@@ -199,9 +250,9 @@ export default async function LandingPage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white p-8 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100 group cursor-pointer"
+                className="bg-white p-8 rounded-sm shadow-xs transition-all border border-brand-200 group cursor-pointer"
               >
-                <div className="w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center mb-6 group-hover:bg-brand group-hover:scale-110 transition-all">
+                <div className="w-12 h-12 bg-brand-100 rounded-sm flex items-center justify-center mb-6 group-hover:bg-brand group-hover:scale-110 transition-all">
                   <feature.icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
                 </div>
                 <h3 className="text-xl font-semibold text-text-primary mb-3">
@@ -290,7 +341,7 @@ export default async function LandingPage() {
               <span className="text-lg font-bold text-text-primary">Bite</span>
             </div>
             <div className="text-text-secondary text-sm">
-              © 2024 Bite. All rights reserved.
+              © 2026 Bite. All rights reserved.
             </div>
           </div>
         </div>
@@ -299,27 +350,34 @@ export default async function LandingPage() {
   );
 }
 
-const mockRecipes = [
+const heroRecipes = [
   {
     title: "Spaghetti Carbonara",
     time: 25,
     rating: 4.8,
-    bgColor: "bg-brand-100",
-    icon: ChefHat,
+    imageUrl:
+      "https://images.unsplash.com/photo-1608756687911-aa1599ab3bd9?auto=format&fit=crop&w=1200&q=80",
   },
   {
-    title: "Grilled Salmon",
+    title: "Grilled Salmon Bowl",
     time: 30,
     rating: 4.9,
-    bgColor: "bg-brand-50",
-    icon: Heart,
+    imageUrl:
+      "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=1200&q=80",
   },
   {
     title: "Caesar Salad",
     time: 15,
     rating: 4.7,
-    bgColor: "bg-brand-200",
-    icon: BookOpen,
+    imageUrl:
+      "https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    title: "Blueberry Pancakes",
+    time: 20,
+    rating: 4.8,
+    imageUrl:
+      "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=1200&q=80",
   },
 ];
 
