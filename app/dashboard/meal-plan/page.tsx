@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { mealPlans, recipes } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { createMealPlan } from "./actions";
-import { ViewMode } from "@/components/meal-plan/view-switcher";
+import { ViewMode } from "@/components/meal-plan/meal-plan-calendar";
 import MealPlanCalendar from "@/components/meal-plan/meal-plan-calendar";
 
 function getWeek(weekOffset: number = 0) {

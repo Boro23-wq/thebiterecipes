@@ -1,4 +1,3 @@
-// components/meal-plan/meal-plan-calendar.tsx
 "use client";
 
 import { addDays, format } from "date-fns";
@@ -6,7 +5,7 @@ import RecipeSidebar from "./recipe-sidebar";
 import GroceryListButton from "./grocery-list-button";
 import DayColumn from "./day-column";
 import MealPlanListView from "./meal-plan-list-view";
-import ViewSwitcher, { ViewMode } from "./view-switcher";
+import ViewSwitcher from "@/components/view-switcher";
 import { MealPlan, Recipe } from "@/app/dashboard/meal-plan/types";
 import {
   Sheet,
@@ -17,8 +16,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
-import { BookOpen, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BookOpen,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  List,
+} from "lucide-react";
 import Link from "next/link";
+
+export type ViewMode = "calendar" | "list";
 
 interface MealPlanCalendarProps {
   mealPlan: MealPlan;
@@ -127,10 +135,28 @@ export default function MealPlanCalendar({
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {/* View Switcher */}
-            <ViewSwitcher currentView={viewMode} weekOffset={weekOffset} />
+            <ViewSwitcher
+              mode="link"
+              currentView={viewMode}
+              options={[
+                {
+                  value: "calendar",
+                  icon: LayoutGrid,
+                  label: "Calendar view",
+                },
+                {
+                  value: "list",
+                  icon: List,
+                  label: "List view",
+                },
+              ]}
+              getLinkHref={(view) =>
+                `/dashboard/meal-plan?week=${weekOffset}&view=${view}`
+              }
+            />
 
             {/* Week Navigation */}
-            <div className="flex items-center gap-1 rounded-sm border border-gray-200 bg-white/70 p-1">
+            <div className="flex items-center gap-1 rounded-sm border border-border-light bg-white/70 p-1">
               <Link
                 href={`/dashboard/meal-plan?week=${weekOffset - 1}&view=${viewMode}`}
               >
