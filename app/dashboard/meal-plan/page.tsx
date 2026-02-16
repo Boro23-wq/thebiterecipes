@@ -1,10 +1,10 @@
-// app/dashboard/meal-plan/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { mealPlans, recipes } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { createMealPlan } from "./actions";
+import { ViewMode } from "@/components/meal-plan/view-switcher";
 import MealPlanCalendar from "@/components/meal-plan/meal-plan-calendar";
 
 function getWeek(weekOffset: number = 0) {
@@ -27,14 +27,15 @@ function getWeek(weekOffset: number = 0) {
 export default async function MealPlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string }>; // ✅ Promise type
+  searchParams: Promise<{ week?: string; view?: string }>;
 }) {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  const params = await searchParams; // ✅ Await it
+  const params = await searchParams;
   const weekOffset = parseInt(params.week ?? "0");
   const { startDate, endDate } = getWeek(weekOffset);
+  const viewMode = (params.view ?? "calendar") as ViewMode;
 
   let mealPlan = await db.query.mealPlans.findFirst({
     where: and(
@@ -104,6 +105,7 @@ export default async function MealPlanPage({
         startDate={startDate}
         endDate={endDate}
         weekOffset={weekOffset}
+        viewMode={viewMode}
       />
     </div>
   );
