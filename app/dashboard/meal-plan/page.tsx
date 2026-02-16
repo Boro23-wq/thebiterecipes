@@ -1,3 +1,4 @@
+// app/dashboard/meal-plan/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -6,11 +7,14 @@ import { eq, and, gte, lte } from "drizzle-orm";
 import { createMealPlan } from "./actions";
 import MealPlanCalendar from "@/components/meal-plan/meal-plan-calendar";
 
-function getCurrentWeek() {
+function getWeek(weekOffset: number = 0) {
   const now = new Date();
   const day = now.getDay();
   const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(now.setDate(diff));
+
+  // Apply week offset
+  monday.setDate(monday.getDate() + weekOffset * 7);
   monday.setHours(0, 0, 0, 0);
 
   const sunday = new Date(monday);
@@ -20,11 +24,17 @@ function getCurrentWeek() {
   return { startDate: monday, endDate: sunday };
 }
 
-export default async function MealPlanPage() {
+export default async function MealPlanPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>; // ✅ Promise type
+}) {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  const { startDate, endDate } = getCurrentWeek();
+  const params = await searchParams; // ✅ Await it
+  const weekOffset = parseInt(params.week ?? "0");
+  const { startDate, endDate } = getWeek(weekOffset);
 
   let mealPlan = await db.query.mealPlans.findFirst({
     where: and(
@@ -80,7 +90,7 @@ export default async function MealPlanPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 ">
+    <div className="container mx-auto px-4">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Meal Planning</h1>
         <p className="text-muted-foreground">
@@ -93,6 +103,7 @@ export default async function MealPlanPage() {
         recipes={userRecipes}
         startDate={startDate}
         endDate={endDate}
+        weekOffset={weekOffset}
       />
     </div>
   );

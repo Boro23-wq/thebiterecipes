@@ -14,13 +14,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
-import { BookOpen, X } from "lucide-react";
+import { BookOpen, X, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 interface MealPlanCalendarProps {
   mealPlan: MealPlan;
   recipes: Recipe[];
   startDate: Date;
   endDate: Date;
+  weekOffset: number;
 }
 
 export default function MealPlanCalendar({
@@ -28,9 +30,11 @@ export default function MealPlanCalendar({
   recipes,
   startDate,
   endDate,
+  weekOffset,
 }: MealPlanCalendarProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
   const weekLabel = `${format(startDate, "MMM d")} – ${format(endDate, "MMM d")}`;
+  const isCurrentWeek = weekOffset === 0;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[340px_1fr] items-stretch">
@@ -56,7 +60,6 @@ export default function MealPlanCalendar({
               ].join(" ")}
             >
               <BookOpen className="h-5 w-5" />
-              {/* optional label: hidden on very small screens */}
               <span className="text-md font-semibold hidden sm:inline">
                 Recipes
               </span>
@@ -107,11 +110,50 @@ export default function MealPlanCalendar({
             </p>
           </div>
 
-          <GroceryListButton
-            mealPlanId={mealPlan.id}
-            hasRecipes={(mealPlan.mealPlanRecipes?.length ?? 0) > 0}
-            isStale={mealPlan.groceryList?.isStale ?? false}
-          />
+          <div className="flex items-center gap-2">
+            {/* Week Navigation */}
+            <div className="flex items-center gap-1 rounded-sm border border-gray-200 bg-white/70 p-1">
+              <Link href={`/dashboard/meal-plan?week=${weekOffset - 1}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-sm"
+                  aria-label="Previous week"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+
+              {!isCurrentWeek && (
+                <Link href="/dashboard/meal-plan">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs rounded-sm"
+                  >
+                    Today
+                  </Button>
+                </Link>
+              )}
+
+              <Link href={`/dashboard/meal-plan?week=${weekOffset + 1}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-sm"
+                  aria-label="Next week"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <GroceryListButton
+              mealPlanId={mealPlan.id}
+              hasRecipes={(mealPlan.mealPlanRecipes?.length ?? 0) > 0}
+              isStale={mealPlan.groceryList?.isStale ?? false}
+            />
+          </div>
         </div>
 
         <div className="rounded-sm bg-brand-100 border border-border-brand-light">
