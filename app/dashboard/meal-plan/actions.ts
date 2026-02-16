@@ -31,7 +31,6 @@ export async function createMealPlan(input: {
     })
     .returning();
 
-  revalidatePath("/dashboard/meal-plan");
   return plan;
 }
 
