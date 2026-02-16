@@ -32,7 +32,7 @@ export default function ViewSwitcher(props: ViewSwitcherProps) {
   return (
     <div
       className={cn(
-        "inline-flex w-fit shrink-0 items-center bg-brand-300 rounded-sm p-1 gap-1",
+        "inline-flex w-fit shrink-0 items-center bg-brand-300 rounded-sm p-1.5 gap-1",
         className,
       )}
     >

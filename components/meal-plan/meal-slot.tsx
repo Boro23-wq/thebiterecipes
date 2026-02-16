@@ -14,6 +14,7 @@ import {
   Recipe,
 } from "@/app/dashboard/meal-plan/types";
 import RecipePickerDialog from "./recipe-picker-dialog";
+import { Button } from "../ui/button";
 
 interface MealSlotProps {
   date: Date;
@@ -111,10 +112,10 @@ export default function MealSlot({
           <button
             type="button"
             onClick={() => setOpenPicker(true)}
-            className="w-full rounded-sm border border-dashed border-border-brand-light bg-white/40 hover:bg-white/60 transition p-2 flex items-center justify-center"
+            className="w-full rounded-sm border border-dashed border-border-brand-light bg-white/40 hover:bg-white/60 transition p-2 flex items-center justify-center cursor-pointer"
             aria-label={`Add recipe to ${label}`}
           >
-            <Plus className="h-4 w-4 text-[#FF6B35]" />
+            <Plus className="h-4 w-4 text-brand" />
           </button>
         </div>
       ) : (
@@ -133,13 +134,15 @@ export default function MealSlot({
                     className="object-cover"
                   />
 
-                  <button
+                  <Button
                     onClick={() => handleRemove(mpr.id)}
-                    className="absolute top-1 right-1 p-1 bg-black/55 hover:bg-black/75 text-white rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    variant="destructive"
+                    size="icon-xs"
+                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     aria-label="Remove"
                   >
                     <X className="h-3 w-3" />
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -172,13 +175,15 @@ export default function MealSlot({
                 </div>
 
                 {!mpr.recipe.imageUrl && (
-                  <button
+                  <Button
                     onClick={() => handleRemove(mpr.id)}
-                    className="absolute top-1 right-1 p-1 bg-muted hover:bg-muted-foreground/20 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    variant="destructive"
+                    size="icon-xs"
+                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     aria-label="Remove"
                   >
                     <X className="h-3 w-3" />
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -186,7 +191,6 @@ export default function MealSlot({
         </div>
       )}
 
-      {/* Picker Dialog (click to add) */}
       <RecipePickerDialog
         open={openPicker}
         onOpenChange={setOpenPicker}

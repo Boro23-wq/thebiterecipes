@@ -51,6 +51,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 import type { RecipesCursor } from "@/app/dashboard/recipes/actions";
+import { layout } from "@/lib/design-tokens";
 
 type ViewMode = "grid" | "compact";
 type SortBy = "recent" | "title" | "rating" | "time";
@@ -604,7 +605,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                   <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
                     {group}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+                  <div className={layout.grid3}>
                     {groupRecipes.map((recipe) => (
                       <RecipeCard key={recipe.id} {...recipe} />
                     ))}

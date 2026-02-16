@@ -92,7 +92,7 @@ export default async function MealPlanPage({
 
   return (
     <div className="container mx-auto px-4">
-      <div className="mb-6">
+      <div className="mb-3 sm:mb-6">
         <h1 className="text-3xl font-bold">Meal Planning</h1>
         <p className="text-muted-foreground">
           Drag recipes onto your calendar — or click Add

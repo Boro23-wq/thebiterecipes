@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
-import { Search, Clock, Users } from "lucide-react";
+import { Search, Clock, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -58,34 +59,45 @@ export default function RecipePickerDialog(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+      <DialogContent className="sm:max-w-md [&>button]:hidden pt-4">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
+
+          <DialogClose asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="cursor-pointer"
+              aria-label="Close"
+            >
+              <X />
+            </Button>
+          </DialogClose>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-5">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search recipes..."
-              className="pl-9 rounded-md"
+              className="pl-9 rounded-sm border-border-light"
             />
           </div>
 
           {filtered.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-10">
-              No matches
+              No matches. Try searching a different recipe.
             </div>
           ) : (
-            <div className="max-h-[420px] overflow-y-auto rounded-md border">
+            <div className="scrollbar-bite max-h-105 overflow-y-auto rounded-sm border border-border-light">
               {filtered.map((r) => (
                 <div
                   key={r.id}
-                  className="flex items-center gap-3 p-3 border-b last:border-b-0 hover:bg-muted/30 transition"
+                  className="flex items-center gap-3 p-3 border-b border-border-light last:border-b-0 hover:bg-muted/30 transition"
                 >
-                  <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted shrink-0">
+                  <div className="relative h-12 w-12 rounded-sm overflow-hidden bg-muted shrink-0">
                     {r.imageUrl ? (
                       <Image
                         src={r.imageUrl}
@@ -118,8 +130,8 @@ export default function RecipePickerDialog(props: {
 
                   <Button
                     type="button"
-                    variant="secondary"
-                    className="rounded-md"
+                    variant="brand"
+                    className="rounded-sm"
                     disabled={disabled || pending}
                     onClick={() => onPick(r.id)}
                   >

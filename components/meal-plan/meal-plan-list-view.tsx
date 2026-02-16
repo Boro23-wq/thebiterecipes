@@ -58,7 +58,7 @@ export default function MealPlanListView({
 
   if (daysWithRecipes.length === 0) {
     return (
-      <div className="rounded-sm border border-border-brand-light bg-white/60 p-12 text-center">
+      <div className="rounded-sm border border-dashed border-border-brand-subtle bg-brand-50 p-12 text-center">
         <p className="text-sm text-muted-foreground">
           No meals planned yet. Add recipes to get started!
         </p>

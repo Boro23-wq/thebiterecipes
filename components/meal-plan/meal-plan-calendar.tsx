@@ -126,14 +126,14 @@ export default function MealPlanCalendar({
           <div className="min-w-0">
             <h2 className="text-xl -mt-1.5 font-semibold">Your Week</h2>
             <p className="text-sm text-muted-foreground">{weekLabel}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs text-muted-foreground">
               {viewMode === "calendar"
                 ? "Tip: drag recipes onto a meal, or click Add."
                 : "Your planned meals for the week."}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto my-2 sm:mt-0">
             {/* View Switcher */}
             <ViewSwitcher
               mode="link"
@@ -200,6 +200,7 @@ export default function MealPlanCalendar({
               mealPlanId={mealPlan.id}
               hasRecipes={(mealPlan.mealPlanRecipes?.length ?? 0) > 0}
               isStale={mealPlan.groceryList?.isStale ?? false}
+              groceryList={mealPlan.groceryList}
             />
           </div>
         </div>

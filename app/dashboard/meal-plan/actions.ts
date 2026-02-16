@@ -12,7 +12,19 @@ import {
   mealPlans,
 } from "@/db/schema";
 
-// ===== MEAL PLAN CRUD =====
+type MealPlanRecipeWithDetails = {
+  customServings: number | null;
+  recipe: {
+    id: string;
+    title: string;
+    servings: number | null;
+    ingredients: Array<{
+      amount: string | null;
+      ingredient: string;
+    }>;
+  };
+};
+
 export async function createMealPlan(input: {
   startDate: Date;
   endDate: Date;
@@ -211,7 +223,9 @@ export async function generateGroceryList(mealPlanId: string) {
     );
 
   // Aggregate ingredients with smart combining
-  const aggregated = aggregateIngredients(plan.mealPlanRecipes);
+  const aggregated = aggregateIngredients(
+    plan.mealPlanRecipes as MealPlanRecipeWithDetails[],
+  );
 
   // Insert new items
   const newItems = aggregated.map((item, idx) => {
@@ -222,7 +236,7 @@ export async function generateGroceryList(mealPlanId: string) {
       ingredient: item.ingredient,
       amount: item.amount,
       unit: item.unit,
-      recipeIds: JSON.stringify(item.recipeIds),
+      recipeIds: JSON.stringify(item.recipes),
       isManual: false,
       isChecked: prevChecked?.isChecked ?? false,
       checkedAt: prevChecked?.checkedAt ?? null,
@@ -249,27 +263,13 @@ export async function generateGroceryList(mealPlanId: string) {
 }
 
 // ===== SMART COMBINING LOGIC =====
-
-// Type the parameter properly (top of function)
-function aggregateIngredients(
-  mealPlanRecipes: Array<{
-    customServings: number | null;
-    recipe: {
-      id: string;
-      servings: number | null;
-      ingredients: Array<{
-        amount: string | null;
-        ingredient: string;
-      }>;
-    };
-  }>,
-) {
+function aggregateIngredients(mealPlanRecipes: MealPlanRecipeWithDetails[]) {
   const ingredientMap = new Map<
     string,
     {
       ingredient: string;
       totalAmount: number;
-      recipeIds: string[];
+      recipes: Array<{ id: string; title: string }>;
     }
   >();
 
@@ -288,27 +288,29 @@ function aggregateIngredients(
         ingredientMap.set(key, {
           ingredient: parsed.ingredient,
           totalAmount: 0,
-          recipeIds: [],
+          recipes: [],
         });
       }
 
       const entry = ingredientMap.get(key)!;
 
-      // Parse numeric amount
       const numericAmount = parseAmount(parsed.amount);
       if (numericAmount !== null) {
         entry.totalAmount += numericAmount * servingsMultiplier;
       }
 
-      entry.recipeIds.push(recipe.id);
+      // ✅ Now TypeScript knows recipe has title
+      if (!entry.recipes.some((r) => r.id === recipe.id)) {
+        entry.recipes.push({ id: recipe.id, title: recipe.title });
+      }
     }
   }
 
   return Array.from(ingredientMap.values()).map((entry) => ({
     ingredient: entry.ingredient,
     amount: formatAmount(entry.totalAmount),
-    unit: null, // parseIngredient doesn't extract units
-    recipeIds: entry.recipeIds,
+    unit: null,
+    recipes: entry.recipes,
   }));
 }
 

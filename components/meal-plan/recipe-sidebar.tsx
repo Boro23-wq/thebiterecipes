@@ -125,11 +125,11 @@ export default function RecipeSidebar({
           className={[
             "h-full overflow-y-auto pr-1",
             "scrollbar-bite",
-            fadeClass, // ✅ dynamic fade
+            fadeClass,
           ].join(" ")}
         >
           {filteredRecipes.length === 0 ? (
-            <div className="rounded-sm bg-white/60 border border-border-brand-subtle p-6 text-center">
+            <div className="rounded-sm bg-brand-50 border border-border-light border-dashed ml-1 p-6 text-center">
               <p className="text-sm text-text-secondary">No recipes found</p>
             </div>
           ) : (
