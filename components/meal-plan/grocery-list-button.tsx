@@ -1,8 +1,8 @@
+// components/meal-plan/grocery-list-button.tsx
 "use client";
 
 import { ShoppingCart, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Sheet,
@@ -57,20 +57,6 @@ export default function GroceryListButton({
 
   if (!hasRecipes) return null;
 
-  // Mobile: Link to page
-  if (!isDesktop) {
-    return (
-      <Link href={`/dashboard/meal-plan/grocery?id=${mealPlanId}`}>
-        <Button variant="brand" className="whitespace-nowrap">
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Grocery List
-          {isStale && <Sparkles className="h-3 w-3 ml-2 animate-pulse" />}
-        </Button>
-      </Link>
-    );
-  }
-
-  // Desktop: Drawer
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -82,20 +68,27 @@ export default function GroceryListButton({
       </SheetTrigger>
 
       <SheetContent
-        side="right"
-        className="w-full sm:max-w-lg p-0 [&>button]:hidden overflow-y-auto scrollbar-bite"
+        side={isDesktop ? "right" : "bottom"}
+        className={
+          isDesktop
+            ? "w-full sm:max-w-lg p-0 [&>button]:hidden overflow-y-auto scrollbar-bite"
+            : "h-[90vh] p-0 [&>button]:hidden"
+        }
       >
-        <SheetHeader className="p-4 pb-2">
+        <SheetHeader
+          className={isDesktop ? "p-3 bg-brand-50" : "p-3 bg-brand-50"}
+        >
+          {" "}
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-bold">
-              <ShoppingCart className="h-5 w-5 mr-2" />
+            <SheetTitle className="text-lg font-bold flex items-center gap-2">
+              <ShoppingCart className="h-8 w-8 bg-brand p-2 text-white rounded-sm" />
             </SheetTitle>
 
             <SheetClose asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="cursor-pointer"
+                className="cursor-pointer -mr-2"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
@@ -104,7 +97,9 @@ export default function GroceryListButton({
           </div>
         </SheetHeader>
 
-        <div className="px-4 py-1">
+        <div
+          className={`px-4 overflow-y-auto scrollbar-bite ${isDesktop ? "py-2 h-auto" : "pt-0 pb-2 h-[calc(90vh-52px)]"}`}
+        >
           <GroceryListView
             mealPlanId={mealPlanId}
             groceryList={groceryList || null}

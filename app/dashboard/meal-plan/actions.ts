@@ -10,6 +10,8 @@ import {
   groceryLists,
   mealPlanRecipes,
   mealPlans,
+  recipes,
+  recipeIngredients,
 } from "@/db/schema";
 
 type MealPlanRecipeWithDetails = {
@@ -299,7 +301,6 @@ function aggregateIngredients(mealPlanRecipes: MealPlanRecipeWithDetails[]) {
         entry.totalAmount += numericAmount * servingsMultiplier;
       }
 
-      // ✅ Now TypeScript knows recipe has title
       if (!entry.recipes.some((r) => r.id === recipe.id)) {
         entry.recipes.push({ id: recipe.id, title: recipe.title });
       }
@@ -418,19 +419,199 @@ export async function addManualGroceryItem(input: {
 
   const nextOrder = items[0]?.order ? items[0].order + 1 : 0;
 
+  const parsed = parseIngredient(input.ingredient);
+
   await db.insert(groceryListItems).values({
     groceryListId: input.groceryListId,
-    ingredient: input.ingredient,
-    amount: input.amount ?? null,
+    ingredient: parsed.ingredient,
+    amount: parsed.amount || input.amount || null,
     unit: null,
     recipeIds: null,
     isManual: true,
     isChecked: false,
-    category: input.category ?? "other",
+    category: input.category ?? categorizeIngredient(parsed.ingredient),
     order: nextOrder,
   });
 
   revalidatePath("/dashboard/meal-plan");
+}
+
+export async function updateGroceryItemQuantity(input: {
+  itemId: string;
+  amount: string;
+  unit?: string;
+}) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const item = await db.query.groceryListItems.findFirst({
+    where: eq(groceryListItems.id, input.itemId),
+    with: {
+      groceryList: {
+        with: { mealPlan: true },
+      },
+    },
+  });
+
+  if (!item || item.groceryList.mealPlan.userId !== user.id) {
+    throw new Error("Not found");
+  }
+
+  await db
+    .update(groceryListItems)
+    .set({
+      amount: input.amount || null,
+      unit: input.unit || null,
+    })
+    .where(eq(groceryListItems.id, input.itemId));
+
+  revalidatePath("/dashboard/meal-plan");
+}
+
+export async function getIngredientSuggestions(query: string) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  if (query.length < 2) return [];
+
+  const lowerQuery = query.toLowerCase();
+
+  const userIngredients = await db
+    .selectDistinct({ ingredient: recipeIngredients.ingredient })
+    .from(recipeIngredients)
+    .innerJoin(recipes, eq(recipeIngredients.recipeId, recipes.id))
+    .where(eq(recipes.userId, user.id))
+    .limit(100);
+
+  const matches = userIngredients
+    .map((r) => r.ingredient)
+    .filter((ing) => ing.toLowerCase().includes(lowerQuery))
+    .sort((a, b) => {
+      const aStarts = a.toLowerCase().startsWith(lowerQuery);
+      const bStarts = b.toLowerCase().startsWith(lowerQuery);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return a.localeCompare(b);
+    })
+    .slice(0, 8);
+
+  if (matches.length === 0) {
+    const commonItems = [
+      "milk",
+      "eggs",
+      "bread",
+      "butter",
+      "cheese",
+      "chicken breast",
+      "ground beef",
+      "rice",
+      "pasta",
+      "tomatoes",
+      "onions",
+      "garlic",
+      "potatoes",
+      "carrots",
+      "lettuce",
+      "apples",
+      "bananas",
+      "yogurt",
+      "flour",
+      "sugar",
+      "salt",
+      "pepper",
+      "olive oil",
+    ];
+
+    return commonItems.filter((item) => item.includes(lowerQuery)).slice(0, 8);
+  }
+
+  return matches;
+}
+
+export async function toggleCategoryItems(input: {
+  groceryListId: string;
+  category: string;
+  checked: boolean;
+}) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const groceryList = await db.query.groceryLists.findFirst({
+    where: eq(groceryLists.id, input.groceryListId),
+    with: { mealPlan: true },
+  });
+
+  if (!groceryList || groceryList.mealPlan.userId !== user.id) {
+    throw new Error("Not found");
+  }
+
+  await db
+    .update(groceryListItems)
+    .set({
+      isChecked: input.checked,
+      checkedAt: input.checked ? new Date() : null,
+    })
+    .where(
+      and(
+        eq(groceryListItems.groceryListId, input.groceryListId),
+        eq(groceryListItems.category, input.category),
+      ),
+    );
+
+  revalidatePath("/dashboard/meal-plan");
+}
+
+export async function reorderGroceryItems(input: {
+  groceryListId: string;
+  itemUpdates: Array<{ id: string; order: number }>;
+}) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const groceryList = await db.query.groceryLists.findFirst({
+    where: eq(groceryLists.id, input.groceryListId),
+    with: { mealPlan: true },
+  });
+
+  if (!groceryList || groceryList.mealPlan.userId !== user.id) {
+    throw new Error("Not found");
+  }
+
+  for (const update of input.itemUpdates) {
+    await db
+      .update(groceryListItems)
+      .set({ order: update.order })
+      .where(eq(groceryListItems.id, update.id));
+  }
+
+  revalidatePath("/dashboard/meal-plan");
+}
+
+export async function clearCheckedGroceryItems(groceryListId: string) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const groceryList = await db.query.groceryLists.findFirst({
+    where: eq(groceryLists.id, groceryListId),
+    with: { mealPlan: true },
+  });
+
+  if (!groceryList || groceryList.mealPlan.userId !== user.id) {
+    throw new Error("Not found");
+  }
+
+  // Delete all checked items (both manual and recipe items)
+  const result = await db
+    .delete(groceryListItems)
+    .where(
+      and(
+        eq(groceryListItems.groceryListId, groceryListId),
+        eq(groceryListItems.isChecked, true),
+      ),
+    );
+
+  revalidatePath("/dashboard/meal-plan");
+  return { success: true };
 }
 
 export async function deleteGroceryItem(itemId: string) {

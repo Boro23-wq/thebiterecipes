@@ -4,13 +4,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Plus, Download, Share2 } from "lucide-react";
+import { RefreshCw, Plus, Download, Share2, Trash2 } from "lucide-react";
 import {
   generateGroceryList,
   addManualGroceryItem,
+  clearCheckedGroceryItems,
 } from "@/app/dashboard/meal-plan/actions";
 import { toast } from "sonner";
 import GroceryCategory from "./grocery-category";
+import { DeleteDialog } from "@/components/delete-dialog";
+import IngredientAutocomplete from "./ingredient-autocomplete";
 import PrintableGroceryList from "./grocery-list-print";
 
 type GroceryListItem = {
@@ -61,6 +64,7 @@ export default function GroceryListView({
   const [isPending, startTransition] = useTransition();
   const [isGenerating, setIsGenerating] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [isClearing, setIsClearing] = useState(false);
 
   const items = groceryList?.items || [];
 
@@ -110,6 +114,30 @@ export default function GroceryListView({
     } catch (error) {
       toast.error("Failed to add item");
       console.error(error);
+    }
+  };
+
+  const handleClearChecked = async () => {
+    if (!groceryList) return;
+
+    const checkedCount = items.filter((i) => i.isChecked).length;
+    if (checkedCount === 0) {
+      toast.info("No checked items to clear");
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await clearCheckedGroceryItems(groceryList.id);
+      toast.success(
+        `Cleared ${checkedCount} item${checkedCount > 1 ? "s" : ""}`,
+      );
+      startTransition(() => router.refresh());
+    } catch (error) {
+      toast.error("Failed to clear items");
+      console.error(error);
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -255,6 +283,34 @@ export default function GroceryListView({
               </Button>
             )}
 
+            {checkedCount > 0 && (
+              <DeleteDialog
+                title="Clear Checked Items"
+                description={`Remove ${checkedCount} checked item${checkedCount > 1 ? "s" : ""} from your grocery list?`}
+                onConfirm={handleClearChecked}
+                disabled={isClearing}
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={isClearing}
+                    className="border-border-light cursor-pointer"
+                  >
+                    {isClearing ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Clearing...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear Checked ({checkedCount})
+                      </>
+                    )}
+                  </Button>
+                }
+              />
+            )}
+
             <Button
               onClick={handlePrint}
               variant="outline"
@@ -298,19 +354,50 @@ export default function GroceryListView({
               )}
             </Button>
           )}
+
+          {checkedCount > 0 && (
+            <DeleteDialog
+              title="Clear Checked Items"
+              description={`Remove ${checkedCount} checked item${checkedCount > 1 ? "s" : ""} from your grocery list?`}
+              onConfirm={handleClearChecked}
+              disabled={isClearing}
+              trigger={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isClearing}
+                  className="ml-auto cursor-pointer"
+                >
+                  {isClearing ? (
+                    <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3 mr-2" />
+                  )}
+                  Clear ({checkedCount})
+                </Button>
+              }
+            />
+          )}
+        </div>
+
+        <div className="lg:hidden">
+          <div>
+            <h2 className="text-2xl font-semibold">Grocery List</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {checkedCount} of {totalCount} items checked
+            </p>
+          </div>
         </div>
 
         {/* Add manual item */}
         <div className="rounded-sm bg-brand-100 border border-border-brand-subtle p-3">
           <div className="flex gap-2">
-            <Input
-              placeholder="Add custom item..."
+            <IngredientAutocomplete
               value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddManualItem();
-              }}
-              className="bg-white border-border-light"
+              onChange={setNewItemName}
+              onSubmit={handleAddManualItem}
+              placeholder="Add custom item..."
+              disabled={isPending}
             />
             <Button
               onClick={handleAddManualItem}

@@ -207,7 +207,7 @@ export default function MealPlanCalendar({
 
         {/* Conditional View Rendering */}
         {viewMode === "list" ? (
-          <MealPlanListView mealPlan={mealPlan} days={days} />
+          <MealPlanListView mealPlan={mealPlan} days={days} recipes={recipes} />
         ) : (
           <div className="rounded-sm bg-brand-100 border border-border-brand-light">
             <div className="overflow-x-auto scrollbar-bite">
