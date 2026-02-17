@@ -175,14 +175,16 @@ export default function MealPlanListView({
                               </h3>
                             </div>
 
-                            <button
+                            <Button
                               onClick={() => handleRemove(mpr.id)}
                               disabled={pending}
-                              className="p-1 hover:bg-muted rounded-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              variant="destructive"
+                              size="xs"
+                              className="rounded-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer"
                               aria-label="Remove"
                             >
-                              <X className="h-4 w-4" />
-                            </button>
+                              <X />
+                            </Button>
                           </div>
 
                           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">

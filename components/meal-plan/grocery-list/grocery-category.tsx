@@ -74,7 +74,7 @@ function SortableItem({ item }: { item: GroceryItemType }) {
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
         <button
           {...attributes}
           {...listeners}

@@ -75,9 +75,7 @@ export default function GroceryListButton({
             : "h-[90vh] p-0 [&>button]:hidden"
         }
       >
-        <SheetHeader
-          className={isDesktop ? "p-3 bg-brand-50" : "p-3 bg-brand-50"}
-        >
+        <SheetHeader className={isDesktop ? "p-3" : "p-3"}>
           {" "}
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-bold flex items-center gap-2">

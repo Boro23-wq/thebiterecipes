@@ -188,7 +188,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                     onClick={handleStartEdit}
                     variant="ghost"
                     size="icon-xs"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
                     <Edit2 />
                   </Button>
@@ -200,7 +200,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                     disabled={isDeleting || isPending}
                     variant="ghost"
                     size="icon-xs"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 />
                   </Button>
