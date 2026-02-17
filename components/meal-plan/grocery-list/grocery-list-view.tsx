@@ -197,7 +197,7 @@ export default function GroceryListView({
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="rounded-sm bg-brand-100 border border-border-brand-subtle p-8 text-center max-w-md">
-          <h3 className="text-lg font-semibold mb-2">
+          <h3 className="text-lg font-semibold mb-1.5">
             Generate Your Grocery List
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
@@ -253,8 +253,8 @@ export default function GroceryListView({
       </div>
 
       <div className="space-y-4">
-        {/* Header with actions - Only show on desktop */}
-        <div className="hidden lg:flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Header with actions - Same on all screens */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">Grocery List</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -268,16 +268,17 @@ export default function GroceryListView({
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 variant="outline"
+                size="sm"
               >
                 {isGenerating ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     Updating...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Update List
+                    <RefreshCw className="h-4 w-4" />
+                    Update
                   </>
                 )}
               </Button>
@@ -292,18 +293,17 @@ export default function GroceryListView({
                 trigger={
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={isClearing}
                     className="border-border-light cursor-pointer"
                   >
                     {isClearing ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Clearing...
                       </>
                     ) : (
                       <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Clear Checked ({checkedCount})
+                        <Trash2 className="h-4 w-4" />({checkedCount})
                       </>
                     )}
                   </Button>
@@ -314,8 +314,8 @@ export default function GroceryListView({
             <Button
               onClick={handlePrint}
               variant="outline"
-              size="icon"
-              className="hidden sm:inline-flex border-border-light"
+              size="sm"
+              className="border-border-light"
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -323,69 +323,11 @@ export default function GroceryListView({
             <Button
               onClick={handleShare}
               variant="outline"
-              size="icon"
-              className="hidden sm:inline-flex border-border-light"
+              size="sm"
+              className="border-border-light"
             >
               <Share2 className="h-4 w-4" />
             </Button>
-          </div>
-        </div>
-
-        {/* Mobile actions row */}
-        <div className="flex lg:hidden items-center justify-between gap-2">
-          {groceryList.isStale && (
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              variant="outline"
-              size="sm"
-              className="border-brand text-brand hover:bg-brand/10"
-            >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
-                  Update
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3 w-3 mr-2" />
-                  Update
-                </>
-              )}
-            </Button>
-          )}
-
-          {checkedCount > 0 && (
-            <DeleteDialog
-              title="Clear Checked Items"
-              description={`Remove ${checkedCount} checked item${checkedCount > 1 ? "s" : ""} from your grocery list?`}
-              onConfirm={handleClearChecked}
-              disabled={isClearing}
-              trigger={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isClearing}
-                  className="ml-auto cursor-pointer"
-                >
-                  {isClearing ? (
-                    <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-3 w-3 mr-2" />
-                  )}
-                  Clear ({checkedCount})
-                </Button>
-              }
-            />
-          )}
-        </div>
-
-        <div className="lg:hidden">
-          <div>
-            <h2 className="text-2xl font-semibold">Grocery List</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {checkedCount} of {totalCount} items checked
-            </p>
           </div>
         </div>
 

@@ -172,7 +172,7 @@ export default function RecipeSidebar({
                           "text-[11px] font-semibold",
                           "cursor-pointer",
                           "transition-opacity",
-                          "opacity-100 md:opacity-0 md:group-hover:opacity-100",
+                          "opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
                         ].join(" ")}
                       >
                         <Plus className="h-3 w-3" />
@@ -191,7 +191,7 @@ export default function RecipeSidebar({
                           "text-[11px] font-semibold",
                           "cursor-pointer",
                           "transition-opacity",
-                          "opacity-100 md:opacity-0 md:group-hover:opacity-100",
+                          "opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
                         ].join(" ")}
                       >
                         <Plus className="h-3 w-3" />

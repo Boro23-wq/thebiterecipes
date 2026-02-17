@@ -120,14 +120,13 @@ export default function GroceryItem({ item }: GroceryItemProps) {
         checked={item.isChecked}
         onCheckedChange={handleToggle}
         disabled={isPending || isEditing}
-        className="mt-0.5"
       />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           {isEditing ? (
             // Edit mode
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-start gap-3 ">
               <Input
                 value={editAmount}
                 onChange={(e) => setEditAmount(e.target.value)}
@@ -188,7 +187,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                     onClick={handleStartEdit}
                     variant="ghost"
                     size="icon-xs"
-                    className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                    className="h-7 w-7 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                   >
                     <Edit2 />
                   </Button>
@@ -200,7 +199,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                     disabled={isDeleting || isPending}
                     variant="ghost"
                     size="icon-xs"
-                    className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                    className="h-7 w-7 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 />
                   </Button>

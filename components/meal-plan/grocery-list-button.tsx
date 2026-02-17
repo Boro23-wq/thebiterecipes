@@ -61,8 +61,8 @@ export default function GroceryListButton({
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="brand" className="whitespace-nowrap">
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Grocery List
+          <ShoppingCart className="h-4 w-4" />
+          Grocery
           {isStale && <Sparkles className="h-3 w-3 ml-2 animate-pulse" />}
         </Button>
       </SheetTrigger>

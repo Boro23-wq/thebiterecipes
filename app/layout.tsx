@@ -31,7 +31,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#FEFEFE]`}
         >
           {children}
-          <Toaster position="top-center" />
+          <Toaster position="bottom-center" />
         </body>
       </html>
     </ClerkProvider>

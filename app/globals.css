@@ -337,3 +337,8 @@
     black 100%
   );
 }
+
+[data-sonner-toast] {
+  border-radius: 0.125rem !important; /* rounded-sm */
+  border-width: 1px !important;
+}
