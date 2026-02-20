@@ -50,7 +50,7 @@ export default function MealPlanCalendar({
   const isCurrentWeek = weekOffset === 0;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[340px_1fr] items-stretch">
+    <div className="grid gap-0 lg:gap-4 lg:grid-cols-[340px_1fr] items-stretch">
       {/* Sidebar - only show in calendar view */}
       {viewMode === "calendar" && (
         <>
@@ -124,7 +124,7 @@ export default function MealPlanCalendar({
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-xl -mt-1.5 font-semibold">Your Week</h2>
+            <h2 className="text-xl  font-semibold">Your Week</h2>
             <p className="text-sm text-muted-foreground">{weekLabel}</p>
             <p className="mt-4 text-xs text-muted-foreground">
               {viewMode === "calendar"

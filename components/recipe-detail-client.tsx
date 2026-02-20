@@ -206,7 +206,7 @@ export function RecipeDetailClient({
             </h3>
             <ol className={spacing.cardLarge}>
               {instructions.map((inst) => (
-                <li key={inst.id} className="flex gap-4">
+                <li key={inst.id} className="flex gap-4 break-all">
                   <span className="shrink-0 w-8 h-8 rounded-sm bg-brand text-white flex items-center justify-center text-sm font-semibold shadow-brand-focus">
                     {inst.order}
                   </span>
@@ -232,7 +232,7 @@ export function RecipeDetailClient({
               <p
                 className={cn(
                   text.body,
-                  "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap",
+                  "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap break-all",
                 )}
               >
                 {recipe.notes}

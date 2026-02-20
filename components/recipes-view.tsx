@@ -386,7 +386,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             align="start"
             sideOffset={6}
             position="popper"
-            className="border border-border-light bg-white  shadow-xs"
+            className="border border-border-light bg-white shadow-xs"
           >
             <SelectGroup>
               <SelectLabel className="text-xs text-text-muted">
@@ -436,18 +436,11 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             sideOffset={8}
             className={cn(
               "w-80 bg-white",
-              "border border-border-light",
+              "border border-border-subtle",
               "p-2 shadow-xs",
               "min-h-55",
               "max-h-90 overflow-y-auto",
-              "[scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.18)_transparent]",
-              "[&::-webkit-scrollbar]:w-2",
-              "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-black/15",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:border-[3px]",
-              "[&::-webkit-scrollbar-thumb]:border-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-clip-content",
+              "scrollbar-bite",
             )}
           >
             <DropdownMenuLabel className="text-sm text-text-primary">

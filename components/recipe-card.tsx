@@ -73,14 +73,15 @@ export function RecipeCard({
     <Link href={`/dashboard/recipes/${id}`}>
       <div className="overflow-hidden transition-all hover:border-border-brand-subtle cursor-pointer h-full rounded-sm bg-white relative border border-border-brand-light flex flex-col">
         {/* Badge */}
-        {category && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-white/95 text-text-primary text-xs font-medium px-2.5 py-1 rounded-sm">
+        <div className="absolute top-3 left-3 right-2 z-10 flex items-start justify-between">
+          {category && (
+            <span className="truncate whitespace-nowrap bg-white/95 text-text-primary text-xs font-medium px-2 py-1 rounded-sm">
               {category}
             </span>
-          </div>
-        )}
+          )}
 
+          <FavoriteButton recipeId={id} isFavorite={isFavorite} />
+        </div>
         {/* Image Section - 60% */}
         <div className="h-52 w-full bg-[#FFF4ED] flex items-center justify-center relative">
           {src ? (
@@ -94,22 +95,17 @@ export function RecipeCard({
           ) : (
             <ImageIcon className="h-12 w-12 text-[#FF6B35]/30" />
           )}
-
-          <div className="absolute top-3 right-3 z-10">
-            <FavoriteButton recipeId={id} isFavorite={isFavorite} />
-          </div>
         </div>
 
         <div className="p-4 space-y-4 bg-[#FFFAF7] flex-1 flex flex-col justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             {/* Title */}
-            <h3 className="text-base font-semibold text-text-primary line-clamp-1">
+            <h3 className="text-base font-semibold text-text-primary truncate">
               {title}
             </h3>
 
             {/* Cuisine */}
-            {/* {cuisine && ( */}
-            <p className="text-sm text-text-secondary line-clamp-1">
+            <p className="text-sm text-text-secondary truncate">
               {cuisine ? cuisine : "Unknown"}
             </p>
             {/* )} */}
@@ -141,7 +137,7 @@ export function RecipeCard({
           </div>
 
           {/* Footer - Date and Rating */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-2 border-t border-brand-300">
             <span
               className={`text-xs font-bold uppercase tracking-tight ${"text-[#FF6B35]"}`}
             >

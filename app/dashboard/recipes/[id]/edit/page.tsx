@@ -66,7 +66,7 @@ export default async function EditRecipePage({
   return (
     <div className="min-h-screen">
       {/* Form Content */}
-      <div className={cn(layout.containerSmall, "py-6", spacing.section)}>
+      <div className={cn(layout.containerSmall, spacing.section)}>
         {/* Header */}
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">

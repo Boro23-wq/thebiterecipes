@@ -109,7 +109,7 @@ export default function RecipePickerDialog(props: {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold line-clamp-1">
+                    <div className="text-sm font-semibold line-clamp-1 break-all">
                       {r.title}
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">

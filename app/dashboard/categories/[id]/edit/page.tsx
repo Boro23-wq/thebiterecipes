@@ -51,13 +51,13 @@ export default async function EditCategoryPage({
       <div className="max-w-2xl mx-auto space-y-6 px-4 sm:px-0">
         {/* Header */}
         <div>
-          <Button variant="ghost" size="sm" asChild className="mb-4">
+          <Button variant="text" size="none" asChild className="mb-4">
             <Link
               href={`/dashboard/categories/${category.id}`}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Category
+              Category
             </Link>
           </Button>
 
@@ -159,8 +159,8 @@ export default async function EditCategoryPage({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="flex gap-2 flex-col sm:flex-row">
               <Button
                 type="submit"
                 variant="brand"

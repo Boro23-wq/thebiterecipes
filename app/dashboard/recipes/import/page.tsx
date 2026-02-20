@@ -34,60 +34,50 @@ export default async function ImportRecipePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Back */}
-      <Button variant="ghost" size="sm" asChild className="cursor-pointer">
+      <Button variant="text" size="none" asChild className="cursor-pointer">
         <Link href="/dashboard/recipes">
           <ArrowLeft className="h-4 w-4" />
-          Back to Recipes
+          Recipes
         </Link>
       </Button>
 
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-sm border border-border-light ">
-        {/* Multi-layer gradient */}
+      <div className="relative overflow-hidden rounded-sm border border-border-light mt-4">
+        {/* Background layers */}
         <div className="absolute inset-0">
           {/* Base gradient */}
-          <div className="absolute inset-0 bg-linear-to-br from-brand-400 via-brand-500 to-brand-600" />
+          <div className="absolute inset-0 bg-linear-to-br from-brand-500 via-brand-600 to-brand-700" />
 
-          {/* Radial glow layers */}
-          <div className="absolute -top-32 -right-32 h-96 w-96 bg-pink-400/30 blur-3xl rounded-full" />
-          <div className="absolute -bottom-32 -left-32 h-96 w-96 bg-cyan-300/30 blur-3xl rounded-full" />
+          {/* Radial glow layers (reduced opacity for richness without haze) */}
+          <div className="absolute -top-32 -right-32 h-96 w-96 bg-pink-500/20 blur-3xl rounded-full" />
+          <div className="absolute -bottom-32 -left-32 h-96 w-96 bg-cyan-400/20 blur-3xl rounded-full" />
 
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent animate-[shimmer_6s_linear_infinite]" />
-
-          {/* Dotted texture */}
-          <div
-            className="absolute inset-0 opacity-[0.15]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, rgba(255,255,255,.7) 1px, transparent 0)",
-              backgroundSize: "18px 18px",
-            }}
-          />
+          {/* Contrast overlay (keeps text readable) */}
+          <div className="absolute inset-0 bg-black/15" />
         </div>
 
         <div className="relative z-10 p-8 text-white">
-          <div className="inline-flex items-center justify-center rounded-sm bg-white/20 p-3 mb-4 backdrop-blur-sm">
-            <Sparkles className="h-6 w-6" />
+          <div className="inline-flex items-center justify-center rounded-sm bg-brand-400/30 p-3 mb-4">
+            <Sparkles className="h-6 w-6 text-white" />
           </div>
 
           <h1 className="text-3xl font-bold mb-2 tracking-tight">
             Import Recipe from URL
           </h1>
 
-          <p className="text-lg text-white/90 max-w-2xl">
+          <p className="text-lg text-white/85 max-w-2xl">
             Paste a recipe link and let Bite magically extract ingredients,
             steps, times, and more — automatically.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2 text-xs">
-            <div className="rounded-sm bg-white/15 px-3 py-1 backdrop-blur-sm">
+            <div className="rounded-sm bg-brand-400/25 px-3 py-1">
               ⚡ Auto-detect ingredients
             </div>
-            <div className="rounded-sm bg-white/15 px-3 py-1 backdrop-blur-sm">
+            <div className="rounded-sm bg-brand-400/25 px-3 py-1">
               🪄 Extract instructions
             </div>
-            <div className="rounded-sm bg-white/15 px-3 py-1 backdrop-blur-sm">
+            <div className="rounded-sm bg-brand-400/25 px-3 py-1">
               ✨ Editable after import
             </div>
           </div>
@@ -142,17 +132,17 @@ export default async function ImportRecipePage() {
 
         <div className="relative p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start sm:items-center justify-between mb-4 flex-col sm:flex-row">
             <div>
               <h3 className="text-sm font-semibold text-text-primary">
-                ✨ Works with most recipe sites
+                Works with most recipe sites ✨
               </h3>
               <p className="text-xs text-text-secondary mt-1">
                 We auto-detect structured recipe data.
               </p>
             </div>
 
-            <div className="rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-brand">
+            <div className="rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-brand mt-2 sm:mt-0">
               JSON-LD Powered
             </div>
           </div>

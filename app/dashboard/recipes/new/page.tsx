@@ -49,6 +49,7 @@ export default async function NewRecipePage() {
                   id="title"
                   name="title"
                   required
+                  maxLength={60}
                   placeholder="e.g. Grandma's Pasta"
                   className={input.base}
                 />
@@ -63,6 +64,7 @@ export default async function NewRecipePage() {
                   id="description"
                   name="description"
                   rows={3}
+                  maxLength={240}
                   placeholder="Short summary of the recipe..."
                   className={cn(input.base, "resize-none")}
                 />
@@ -144,6 +146,7 @@ export default async function NewRecipePage() {
                   <Input
                     id="cuisine"
                     name="cuisine"
+                    maxLength={60}
                     placeholder="e.g. Italian"
                     className={input.base}
                   />
@@ -156,6 +159,7 @@ export default async function NewRecipePage() {
                   <Input
                     id="category"
                     name="category"
+                    maxLength={60}
                     placeholder="e.g. Dinner"
                     className={input.base}
                   />
@@ -289,6 +293,7 @@ export default async function NewRecipePage() {
                 <Input
                   id="source"
                   name="source"
+                  maxLength={120}
                   placeholder="e.g. Family Recipe, Food Network"
                   className={input.base}
                 />
@@ -302,6 +307,7 @@ export default async function NewRecipePage() {
                   id="notes"
                   name="notes"
                   rows={4}
+                  maxLength={240}
                   placeholder="Any additional tips or modifications..."
                   className={cn(input.base, "resize-none")}
                 />
@@ -309,8 +315,8 @@ export default async function NewRecipePage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <FormSubmitButton loadingText="Saving recipe...">
                   Save Recipe
                 </FormSubmitButton>

@@ -203,7 +203,7 @@ export default function RecipeSidebar({
                   {/* Body */}
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-semibold text-sm line-clamp-2 leading-snug text-text-primary">
+                      <p className="font-semibold text-sm line-clamp-1 leading-snug text-text-primary break-all">
                         {recipe.title}
                       </p>
 
@@ -240,7 +240,9 @@ export default function RecipeSidebar({
                       {recipe.cuisine ? (
                         <span className="inline-flex items-center gap-2">
                           <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B35]/50" />
-                          {recipe.cuisine}
+                          <p className="text-xs line-clamp-1 leading-snug text-text-secondary break-all">
+                            {recipe.cuisine}
+                          </p>
                         </span>
                       ) : null}
                     </div>

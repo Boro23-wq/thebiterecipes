@@ -151,9 +151,10 @@ export function CategoryCard({
               {isPinned ? "Unpin" : "Pin to Dashboard"}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border-light" />
+
             <DropdownMenuItem
               onClick={handleDelete}
-              className="cursor-pointer text-destructive focus:text-destructive hover:bg-red-50"
+              className="cursor-pointer text-destructive focus:text-destructive hover:bg-red-50!"
               disabled={isPending}
             >
               <Trash2 className="mr-2 h-4 w-4" />

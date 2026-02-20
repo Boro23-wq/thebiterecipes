@@ -86,8 +86,8 @@ export default async function DashboardPage() {
             </span>
             <BookOpen className={cn(icon.small, icon.brand)} />
           </div>
-          <div className={text.h1}>{totalRecipes}</div>
-          <p className={cn(text.muted, "mt-0.5")}>In your collection</p>
+          <div className={text.statValue}>{totalRecipes}</div>
+          <p className={cn(text.muted, "mt-1")}>In your collection</p>
         </StatsCard>
 
         {/* Favorites */}
@@ -98,8 +98,8 @@ export default async function DashboardPage() {
             </span>
             <Heart className={cn(icon.small, icon.brand)} />
           </div>
-          <div className={text.h1}>{favoriteRecipes}</div>
-          <p className={cn(text.muted, "mt-0.5")}>Marked as favorite</p>
+          <div className={text.statValue}>{favoriteRecipes}</div>
+          <p className={cn(text.muted, "mt-1")}>Marked as favorite</p>
         </StatsCard>
 
         {/* Average Cook Time */}
@@ -110,8 +110,10 @@ export default async function DashboardPage() {
             </span>
             <Clock className={cn(icon.small, icon.brand)} />
           </div>
-          <div className={text.h1}>{avgTime > 0 ? `${avgTime}m` : "--"}</div>
-          <p className={cn(text.muted, "mt-0.5")}>Minutes per recipe</p>
+          <div className={text.statValue}>
+            {avgTime > 0 ? `${avgTime}m` : "--"}
+          </div>
+          <p className={cn(text.muted, "mt-1")}>Minutes per recipe</p>
         </StatsCard>
 
         {/* Quick Action */}

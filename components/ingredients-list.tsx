@@ -176,7 +176,7 @@ export function IngredientsList({
         {ingredients.map((ing, index) => (
           <li
             key={ing.id}
-            className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors"
+            className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors break-all"
           >
             <span className="shrink-0 w-6 h-6 rounded-sm bg-brand-100 text-brand flex items-center justify-center text-xs font-medium">
               {index + 1}

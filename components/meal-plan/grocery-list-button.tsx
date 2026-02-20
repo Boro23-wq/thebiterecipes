@@ -1,4 +1,3 @@
-// components/meal-plan/grocery-list-button.tsx
 "use client";
 
 import { ShoppingCart, Sparkles, X } from "lucide-react";

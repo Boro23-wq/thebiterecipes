@@ -230,11 +230,30 @@ export default function GroceryListView({
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <div className="rounded-sm bg-brand-100 border border-border-brand-subtle p-8 text-center max-w-md">
+        <div className="rounded-sm bg-brand-100 border border-border-brand-subtle border-dashed p-8 text-center max-w-md w-full">
           <h3 className="text-lg font-semibold mb-2">No Items Yet</h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Add recipes to your meal plan to generate a grocery list
+            Add recipes to your meal plan, then generate your grocery list.
           </p>
+
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            variant="brand"
+            className="w-full"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Generate List
+              </>
+            )}
+          </Button>
         </div>
       </div>
     );

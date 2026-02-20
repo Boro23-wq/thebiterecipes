@@ -23,13 +23,16 @@ export const text = {
 
   // Special
   label: "text-sm font-medium text-text-primary",
+
+  // Stats
+  statValue: "text-xl sm:text-3xl font-semibold leading-none text-text-primary",
 } as const;
 
 export const card = {
   base: "bg-white rounded-md shadow-brand",
   baseSm: "bg-white rounded-md shadow-brand-sm",
   stats:
-    "bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-4 rounded-sm cursor-pointer",
+    "bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-3 sm:p-4 rounded-sm",
   content: "bg-brand-100 p-4 rounded-sm",
   hover: "hover:shadow-brand-sm transition-all",
 } as const;
@@ -40,7 +43,8 @@ export const layout = {
   containerSmall: "max-w-3xl mx-auto px-0 sm:px-6",
   grid2: "grid grid-cols-1 md:grid-cols-2 gap-4",
   grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
-  grid4: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3",
+  // grid4: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3",
+  grid4: "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4",
 } as const;
 
 export const input = {

@@ -33,10 +33,10 @@ export default async function NewCategoryPage() {
       <div className="max-w-2xl mx-auto space-y-6 px-4 sm:px-0">
         {/* Header */}
         <div>
-          <Button variant="ghost" size="sm" asChild className="mb-4">
+          <Button variant="text" size="none" asChild className="mb-4">
             <Link href="/dashboard/categories" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back to Categories
+              Categories
             </Link>
           </Button>
 
@@ -96,6 +96,7 @@ export default async function NewCategoryPage() {
                   id="name"
                   name="name"
                   required
+                  maxLength={60}
                   placeholder="e.g. Weeknight Wins, High-Protein, Holiday Baking"
                   className="pl-9 border-border-light focus:border-brand focus:ring-brand"
                 />
@@ -122,6 +123,7 @@ export default async function NewCategoryPage() {
                 id="description"
                 name="description"
                 rows={4}
+                maxLength={240}
                 placeholder="Tell future-you what belongs here…"
                 className="border-border-light focus:border-brand focus:ring-brand resize-none"
               />
@@ -136,8 +138,8 @@ export default async function NewCategoryPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="flex gap-2 flex-col sm:flex-row">
               <Button
                 type="submit"
                 variant="brand"

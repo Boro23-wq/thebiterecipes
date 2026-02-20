@@ -164,7 +164,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
             <>
               <p
                 className={cn(
-                  "text-sm font-medium leading-tight",
+                  "text-sm font-medium leading-tight line-clamp-2 break-all",
                   item.isChecked && "line-through",
                 )}
               >

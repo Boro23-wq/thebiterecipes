@@ -41,13 +41,13 @@ export default async function CategoryDetailPage({
   const recipes = category.recipeCategories.map((rc) => rc.recipe);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
-        <Button variant="ghost" size="sm" asChild className="gap-2">
+        <Button variant="text" size="none" asChild className="gap-2">
           <Link href="/dashboard/categories">
             <ArrowLeft className="h-4 w-4" />
-            Back to Categories
+            Categories
           </Link>
         </Button>
 
@@ -88,13 +88,13 @@ export default async function CategoryDetailPage({
                     <FolderOpen className="h-7 w-7 text-brand" />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <h1 className="truncate text-2xl font-semibold tracking-tight text-text-primary">
+                  <div className="min-w-0 flex flex-wrap items-center gap-3">
+                    <h1 className="min-w-0 max-w-full text-2xl font-semibold tracking-tight text-text-primary break-all">
                       {category.name}
                     </h1>
 
                     {category.isPinned && (
-                      <span className="inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
+                      <span className="shrink-0 inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
                         <Pin className="h-3.5 w-3.5 text-brand fill-brand" />
                         <span className="text-brand">Pinned</span>
                       </span>
@@ -102,7 +102,7 @@ export default async function CategoryDetailPage({
                   </div>
 
                   {category.description ? (
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary break-all">
                       {category.description}
                     </p>
                   ) : (
@@ -166,9 +166,9 @@ export default async function CategoryDetailPage({
               </h3>
               <p className="mt-2 max-w-md text-sm leading-relaxed text-text-secondary">
                 Pick a recipe, then add it to{" "}
-                <span className="font-medium text-text-primary">
+                <span className="font-medium text-text-primary break-all">
                   {category.name}
-                </span>{" "}
+                </span>
                 from the recipe detail page.
               </p>
 
