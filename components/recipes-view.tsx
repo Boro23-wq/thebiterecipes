@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { searchRecipes } from "@/app/dashboard/recipes/actions";
+import ViewSwitcher from "@/components/view-switcher";
 import {
   Plus,
   LayoutGrid,
@@ -50,6 +51,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 import type { RecipesCursor } from "@/app/dashboard/recipes/actions";
+import { layout } from "@/lib/design-tokens";
 
 type ViewMode = "grid" | "compact";
 type SortBy = "recent" | "title" | "rating" | "time";
@@ -322,43 +324,21 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           </Button>
         </div>
 
-        <div className="inline-flex w-fit shrink-0 items-center bg-brand-50 rounded-sm p-1 gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            className={cn(
-              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
-              viewMode === "grid"
-                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
-                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
-            )}
-            title="Grid View"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("compact")}
-            className={cn(
-              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
-              viewMode === "compact"
-                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
-                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
-            )}
-            title="Compact View"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
+        <ViewSwitcher
+          mode="onClick"
+          currentView={viewMode}
+          onViewChange={(view) => setViewMode(view as ViewMode)}
+          options={[
+            { value: "grid", icon: LayoutGrid, label: "Grid View" },
+            { value: "compact", icon: List, label: "Compact View" },
+          ]}
+        />
       </div>
 
       {/* Search and Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative flex-1 min-w-55">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder="Search recipes, cuisines, categories..."
@@ -406,7 +386,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             align="start"
             sideOffset={6}
             position="popper"
-            className="border border-border-light bg-white  shadow-xs"
+            className="border border-border-light bg-white shadow-xs"
           >
             <SelectGroup>
               <SelectLabel className="text-xs text-text-muted">
@@ -456,18 +436,11 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
             sideOffset={8}
             className={cn(
               "w-80 bg-white",
-              "border border-border-light",
+              "border border-border-subtle",
               "p-2 shadow-xs",
               "min-h-55",
               "max-h-90 overflow-y-auto",
-              "[scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.18)_transparent]",
-              "[&::-webkit-scrollbar]:w-2",
-              "[&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-black/15",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:border-[3px]",
-              "[&::-webkit-scrollbar-thumb]:border-transparent",
-              "[&::-webkit-scrollbar-thumb]:bg-clip-content",
+              "scrollbar-bite",
             )}
           >
             <DropdownMenuLabel className="text-sm text-text-primary">
@@ -481,7 +454,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
               className={cn(
                 menuItemCls,
                 "flex items-center justify-start text-left",
-                "pl-2 pr-2", // control padding
+                "pl-2 pr-2",
               )}
             >
               <Star className="mr-2 h-4 w-4 fill-brand text-brand" />
@@ -586,35 +559,16 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
         </DropdownMenu>
 
         {/* View Mode Switcher (desktop only) */}
-        <div className="hidden sm:inline-flex w-fit shrink-0 items-center bg-brand-50 rounded-sm p-1 gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            className={cn(
-              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
-              viewMode === "grid"
-                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
-                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
-            )}
-            title="Grid View"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode("compact")}
-            className={cn(
-              "h-8 w-8 p-0 rounded-sm transition-colors cursor-pointer",
-              viewMode === "compact"
-                ? "bg-brand text-white hover:bg-brand/90 hover:text-white"
-                : "text-text-secondary hover:bg-brand-200 hover:text-text-primary",
-            )}
-            title="Compact View"
-          >
-            <List className="h-4 w-4" />
-          </Button>
+        <div className="hidden sm:block">
+          <ViewSwitcher
+            mode="onClick"
+            currentView={viewMode}
+            onViewChange={(view) => setViewMode(view as ViewMode)}
+            options={[
+              { value: "grid", icon: LayoutGrid, label: "Grid View" },
+              { value: "compact", icon: List, label: "Compact View" },
+            ]}
+          />
         </div>
       </div>
 
@@ -644,7 +598,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                   <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
                     {group}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+                  <div className={layout.grid3}>
                     {groupRecipes.map((recipe) => (
                       <RecipeCard key={recipe.id} {...recipe} />
                     ))}
@@ -755,7 +709,7 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
           {!hasMore && (
             <div className="mt-10 rounded-md border border-dashed border-border-light bg-white p-4 text-center">
               <p className="text-sm text-text-secondary">
-                You’re all caught up ✨
+                You&apos;re all caught up ✨
               </p>
               <div className="mt-4 flex justify-center gap-2">
                 <Button asChild variant="outline">

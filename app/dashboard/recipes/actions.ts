@@ -9,46 +9,9 @@ import {
   recipeImages,
 } from "@/db/schema";
 import { redirect } from "next/navigation";
-import { ilike, desc, asc, sql, and, eq, inArray } from "drizzle-orm";
+import { desc, asc, sql, and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { UTApi } from "uploadthing/server";
 import { parseIngredient } from "@/lib/parse-ingredient";
-
-/**
- * Uploads up to 3 images from multipart FormData ("images" field).
- * Returns hosted URLs in the same order they were submitted.
- */
-async function uploadRecipeImagesFromFormData(
-  formData: FormData,
-): Promise<string[]> {
-  const raw = formData.getAll("images");
-  const files = raw.filter((v): v is File => v instanceof File);
-  const picked = files.filter((f) => f.size > 0).slice(0, 3);
-
-  if (picked.length === 0) return [];
-
-  for (const f of picked) {
-    if (!f.type.startsWith("image/")) {
-      throw new Error(`File "${f.name}" is not an image.`);
-    }
-    if (f.size > 4 * 1024 * 1024) {
-      throw new Error(`Image "${f.name}" is larger than 4MB.`);
-    }
-  }
-
-  const utapi = new UTApi();
-  const result = await utapi.uploadFiles(picked);
-  const results = Array.isArray(result) ? result : [result];
-
-  const urls: string[] = [];
-  for (const r of results) {
-    const url = r?.data?.url;
-    if (url) urls.push(url);
-    else console.error("UploadThing upload result:", r);
-  }
-
-  return urls;
-}
 
 async function assertOwnsRecipeOrThrow(userId: string, recipeId: string) {
   const recipe = await db.query.recipes.findFirst({
@@ -77,27 +40,26 @@ async function applyRecipeImageChanges(params: {
 }) {
   const { recipeId, userId, formData } = params;
 
-  // Owner enforcement for all image mutations
   await assertOwnsRecipeOrThrow(userId, recipeId);
 
-  // Read slot metadata
-  const slotVals = formData.getAll("imageSlot").map(String);
+  // Read slot URLs like "0:https://..." from hidden inputs
+  const slotImageEntries = formData.getAll("slotImageUrl").map(String);
   const clearVals = formData.getAll("clearSlot").map(String);
-
-  const slotIdxs = slotVals
-    .map((v) => parseInt(v, 10))
-    .filter((n) => Number.isFinite(n) && n >= 0 && n <= 2);
 
   const clearIdxs = clearVals
     .map((v) => parseInt(v, 10))
     .filter((n) => Number.isFinite(n) && n >= 0 && n <= 2);
 
-  // Upload files (if any)
-  const hostedImageUrls = await uploadRecipeImagesFromFormData(formData);
-
-  // If user selected images but slot metadata is missing, treat as full replace (legacy UI)
-  const shouldFallbackFullReplace =
-    hostedImageUrls.length > 0 && slotIdxs.length === 0;
+  const slotUrlMap = new Map<number, string>();
+  for (const entry of slotImageEntries) {
+    const colonIndex = entry.indexOf(":");
+    if (colonIndex === -1) continue;
+    const idx = parseInt(entry.slice(0, colonIndex), 10);
+    const url = entry.slice(colonIndex + 1);
+    if (Number.isFinite(idx) && idx >= 0 && idx <= 2 && url) {
+      slotUrlMap.set(idx, url);
+    }
+  }
 
   // Load existing images
   const existing = await db.query.recipeImages.findMany({
@@ -109,31 +71,11 @@ async function applyRecipeImageChanges(params: {
   for (const img of existing) byOrder.set(img.order, img.imageUrl);
 
   // Apply clears
-  for (const c of clearIdxs) byOrder.delete(c);
+  for (const idx of clearIdxs) byOrder.delete(idx);
 
-  if (shouldFallbackFullReplace) {
-    // Full replace: wipe and use hostedImageUrls 0..n
-    byOrder.clear();
-    hostedImageUrls
-      .slice(0, 3)
-      .forEach((url, order) => byOrder.set(order, url));
-  } else if (hostedImageUrls.length > 0) {
-    // Slot merge: pair urls with slotIdxs (same order).
-    // If mismatch, fall back to sequential assignment.
-    if (slotIdxs.length !== hostedImageUrls.length) {
-      hostedImageUrls
-        .slice(0, 3)
-        .forEach((url, order) => byOrder.set(order, url));
-    } else {
-      hostedImageUrls.forEach((url, i) => {
-        const slot = slotIdxs[i];
-        if (slot == null) return;
-        byOrder.set(slot, url);
-      });
-    }
-  }
+  // Apply new URLs
+  for (const [idx, url] of slotUrlMap.entries()) byOrder.set(idx, url);
 
-  // Build final rows for orders 0..2 only
   const finalRows = [0, 1, 2]
     .map((order) => {
       const url = byOrder.get(order);
@@ -141,17 +83,12 @@ async function applyRecipeImageChanges(params: {
     })
     .filter(Boolean) as { recipeId: string; imageUrl: string; order: number }[];
 
-  // Only write if there were actual image operations (uploads or clears)
-  const hasImageOps =
-    hostedImageUrls.length > 0 ||
-    clearIdxs.length > 0 ||
-    shouldFallbackFullReplace;
+  const hasImageOps = slotUrlMap.size > 0 || clearIdxs.length > 0;
 
   if (hasImageOps) {
     await db.delete(recipeImages).where(eq(recipeImages.recipeId, recipeId));
     if (finalRows.length > 0) await db.insert(recipeImages).values(finalRows);
 
-    // Keep recipes.imageUrl in sync with primary image (order 0)
     await db
       .update(recipes)
       .set({
@@ -184,7 +121,14 @@ export async function createRecipe(formData: FormData) {
   const instructionsText = formData.get("instructions") as string;
 
   // Upload up to 3 images (create is always "full replace" into empty recipe)
-  const hostedImageUrls = await uploadRecipeImagesFromFormData(formData);
+  const slotImageEntries = formData.getAll("slotImageUrl").map(String);
+  const hostedImageUrls: string[] = [];
+  for (const entry of slotImageEntries) {
+    const colonIndex = entry.indexOf(":");
+    if (colonIndex === -1) continue;
+    const url = entry.slice(colonIndex + 1);
+    if (url) hostedImageUrls.push(url);
+  }
 
   const ingredientsList = ingredientsText
     .split("\n")

@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { categories, recipes as allRecipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { RecipeCard } from "@/components/recipe-card";
@@ -9,6 +9,7 @@ import { ArrowLeft, Edit, FolderOpen, Pin, Plus } from "lucide-react";
 import Link from "next/link";
 import { TogglePinButton } from "@/components/toggle-pin-button";
 import { DeleteCategoryButton } from "@/components/delete-category-button";
+import AddRecipeToCategoryButton from "@/components/add-recipe-to-category-button";
 
 export default async function CategoryDetailPage({
   params,
@@ -38,16 +39,31 @@ export default async function CategoryDetailPage({
     notFound();
   }
 
-  const recipes = category.recipeCategories.map((rc) => rc.recipe);
+  // Recipes already in this category
+  const categoryRecipes = category.recipeCategories.map((rc) => rc.recipe);
+
+  // All user recipes (for dialog)
+  const userRecipes = await db.query.recipes.findMany({
+    where: eq(allRecipes.userId, user.id),
+    columns: {
+      id: true,
+      title: true,
+      imageUrl: true,
+      totalTime: true,
+      servings: true,
+    },
+  });
+
+  const existingRecipeIds = categoryRecipes.map((r) => r.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
-        <Button variant="ghost" size="sm" asChild className="gap-2">
+        <Button variant="text" size="none" asChild className="gap-2">
           <Link href="/dashboard/categories">
             <ArrowLeft className="h-4 w-4" />
-            Back to Categories
+            Categories
           </Link>
         </Button>
 
@@ -73,9 +89,8 @@ export default async function CategoryDetailPage({
         </div>
       </div>
 
-      {/* Hero / header card */}
+      {/* Hero */}
       <div className="relative overflow-hidden rounded-sm border border-border-light bg-background">
-        {/* subtle brand glow */}
         <div className="pointer-events-none absolute -top-20 -right-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-70" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-60" />
 
@@ -88,13 +103,13 @@ export default async function CategoryDetailPage({
                     <FolderOpen className="h-7 w-7 text-brand" />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <h1 className="truncate text-2xl font-semibold tracking-tight text-text-primary">
+                  <div className="min-w-0 flex flex-wrap items-center gap-3">
+                    <h1 className="min-w-0 max-w-full text-2xl font-semibold tracking-tight text-text-primary break-all">
                       {category.name}
                     </h1>
 
                     {category.isPinned && (
-                      <span className="inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
+                      <span className="shrink-0 inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
                         <Pin className="h-3.5 w-3.5 text-brand fill-brand" />
                         <span className="text-brand">Pinned</span>
                       </span>
@@ -102,7 +117,7 @@ export default async function CategoryDetailPage({
                   </div>
 
                   {category.description ? (
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary break-all">
                       {category.description}
                     </p>
                   ) : (
@@ -113,21 +128,21 @@ export default async function CategoryDetailPage({
                 </div>
               </div>
 
-              {/* Stats row */}
+              {/* Stats */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="bg-secondary inline-flex items-center rounded-sm px-3 py-1 text-sm">
-                  <span className=" font-medium text-white ">
-                    {recipes.length}
+                  <span className="font-medium text-white">
+                    {categoryRecipes.length}
                   </span>
-                  <span className="ml-1  text-white ">
-                    {recipes.length === 1 ? "recipe" : "recipes"}
+                  <span className="ml-1 text-white">
+                    {categoryRecipes.length === 1 ? "recipe" : "recipes"}
                   </span>
                 </div>
 
                 <div className="h-5 w-px bg-border-light hidden sm:block" />
 
                 <p className="text-sm text-text-muted">
-                  Manage recipes in this category from recipe pages.
+                  Manage recipes in this category.
                 </p>
               </div>
             </div>
@@ -140,19 +155,22 @@ export default async function CategoryDetailPage({
         <div>
           <h2 className="text-lg font-semibold text-text-primary">Recipes</h2>
           <p className="mt-1 text-sm text-text-secondary">
-            {recipes.length === 0
-              ? "Nothing here yet — add some from your recipes."
+            {categoryRecipes.length === 0
+              ? "Nothing here yet — add some recipes."
               : "All recipes assigned to this category."}
           </p>
         </div>
 
-        <Button asChild variant="brand" className="cursor-pointer">
-          <Link href="/dashboard/recipes">Browse Recipes</Link>
-        </Button>
+        <AddRecipeToCategoryButton
+          categoryId={category.id}
+          categoryName={category.name}
+          recipes={userRecipes}
+          existingRecipeIds={existingRecipeIds}
+        />
       </div>
 
       {/* Recipes Grid / Empty */}
-      {recipes.length === 0 ? (
+      {categoryRecipes.length === 0 ? (
         <div className="relative overflow-hidden rounded-sm border border-border-light border-dashed bg-background">
           <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-sm bg-brand-100 blur-3xl opacity-60" />
           <div className="p-8 sm:p-10">
@@ -165,27 +183,15 @@ export default async function CategoryDetailPage({
                 No recipes in this category
               </h3>
               <p className="mt-2 max-w-md text-sm leading-relaxed text-text-secondary">
-                Pick a recipe, then add it to{" "}
-                <span className="font-medium text-text-primary">
-                  {category.name}
-                </span>{" "}
-                from the recipe detail page.
+                Click <span className="font-medium">Add Recipe</span> to add one
+                to <span className="font-medium">{category.name}</span>.
               </p>
-
-              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-                <Button asChild variant="brand" className="cursor-pointer">
-                  <Link href="/dashboard/recipes">Browse Recipes</Link>
-                </Button>
-                <Button asChild variant="outline" className="cursor-pointer">
-                  <Link href="/dashboard/categories">View All Categories</Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {recipes.map((recipe) => (
+          {categoryRecipes.map((recipe) => (
             <RecipeCard key={recipe.id} {...recipe} />
           ))}
         </div>

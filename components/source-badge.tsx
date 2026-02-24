@@ -78,13 +78,13 @@ export function SourceBadge({
           href={raw}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline"
+          className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline break-all"
         >
           {label}
           <ExternalLink className="h-3.5 w-3.5 text-text-secondary" />
         </a>
       ) : (
-        <span className="font-medium text-text-primary">{label}</span>
+        <span className="font-medium text-text-primary break-all">{label}</span>
       )}
 
       <span className="h-4 w-px bg-border-light" />

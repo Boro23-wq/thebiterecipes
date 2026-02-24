@@ -86,7 +86,7 @@ export default async function FavoritesPage() {
 
       {/* Grid / Empty (same empty card style) */}
       {favoriteRecipes.length === 0 ? (
-        <div className="relative overflow-hidden rounded-xl border border-border-light bg-background">
+        <div className="relative overflow-hidden rounded-sm border border-border-light bg-background">
           <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-full bg-brand-100 blur-3xl opacity-60" />
           <div className="p-8 sm:p-10">
             <div className="flex flex-col items-center text-center">

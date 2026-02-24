@@ -16,6 +16,7 @@ import {
 } from "@/app/dashboard/categories/actions";
 import { useTransition } from "react";
 import Image from "next/image";
+import { DeleteMenuItem } from "./delete-menu-item";
 
 interface CategoryCardProps {
   id: string;
@@ -49,11 +50,9 @@ export function CategoryCard({
   };
 
   const handleDelete = () => {
-    if (confirm(`Delete "${name}" category? This cannot be undone.`)) {
-      startTransition(async () => {
-        await deleteCategory(id);
-      });
-    }
+    startTransition(async () => {
+      await deleteCategory(id);
+    });
   };
 
   const imageSlots = Array.from(
@@ -151,14 +150,14 @@ export function CategoryCard({
               {isPinned ? "Unpin" : "Pin to Dashboard"}
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border-light" />
-            <DropdownMenuItem
-              onClick={handleDelete}
-              className="cursor-pointer text-destructive focus:text-destructive hover:bg-red-50"
+
+            <DeleteMenuItem
+              label="Delete Category"
+              title="Delete Category?"
+              description="This action cannot be undone. Recipes inside this category will not be deleted."
+              onConfirm={handleDelete}
               disabled={isPending}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Category
-            </DropdownMenuItem>
+            />
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

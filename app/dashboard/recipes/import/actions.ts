@@ -45,8 +45,8 @@ interface RecipeSchema {
   recipeYield?: string | number;
   recipeIngredient?: string | string[];
   recipeInstructions?: string | RecipeInstruction | RecipeInstruction[];
-  recipeCuisine?: string;
-  recipeCategory?: string;
+  recipeCuisine?: string | string[];
+  recipeCategory?: string | string[];
   description?: string;
   recipeNotes?: string;
   nutrition?: {
@@ -289,6 +289,23 @@ const extractImageUrls = (image: RecipeSchema["image"]): string[] => {
   return pickBestPerFolder(raw, 3);
 };
 
+const humanize = (s: string) =>
+  s
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const normalizeListField = (v: unknown): string | undefined => {
+  if (!v) return undefined;
+
+  const arr = Array.isArray(v) ? v.map(String) : [String(v)];
+
+  const cleaned = arr.map((s) => humanize(s)).filter(Boolean);
+
+  return cleaned.length ? cleaned.join(", ") : undefined;
+};
+
 /* -------------------------------- Actions -------------------------------- */
 
 export async function parseRecipeUrl(
@@ -333,9 +350,8 @@ export async function parseRecipeUrl(
     const ingredients = toStringArray(recipeData.recipeIngredient);
     const instructions = extractInstructionText(recipeData.recipeInstructions);
 
-    const category = Array.isArray(recipeData.recipeCategory)
-      ? recipeData.recipeCategory[0]
-      : recipeData.recipeCategory;
+    const cuisine = normalizeListField(recipeData.recipeCuisine);
+    const category = normalizeListField(recipeData.recipeCategory);
 
     const imageUrls = extractImageUrls(recipeData.image);
 
@@ -357,7 +373,7 @@ export async function parseRecipeUrl(
       servings: extractServings(recipeData.recipeYield),
       ingredients,
       instructions,
-      cuisine: recipeData.recipeCuisine,
+      cuisine,
       category,
       calories: extractCalories(recipeData.nutrition?.calories),
       protein: extractGrams(recipeData.nutrition?.proteinContent),
@@ -401,8 +417,8 @@ export async function importRecipe(data: ParsedRecipe) {
         data.totalTime ??
         (data.prepTime && data.cookTime ? data.prepTime + data.cookTime : null),
       servings: data.servings ?? null,
-      cuisine: data.cuisine ?? null,
-      category: data.category ?? null,
+      cuisine: typeof data.cuisine === "string" ? data.cuisine : null,
+      category: typeof data.category === "string" ? data.category : null,
       calories: data.calories ?? null,
       protein: data.protein ?? null,
       carbs: data.carbs ?? null,

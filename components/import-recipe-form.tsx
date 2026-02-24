@@ -77,7 +77,7 @@ export function ImportRecipeForm() {
             <Label htmlFor="url" className="text-sm font-medium">
               Recipe URL
             </Label>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative flex-1">
                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <Input
@@ -95,7 +95,7 @@ export function ImportRecipeForm() {
                 onClick={handleParse}
                 disabled={isParsing || isImporting || !url.trim()}
                 variant="brand"
-                className="cursor-pointer shrink-0"
+                className="cursor-pointer w-full sm:w-auto sm:shrink-0"
               >
                 {isParsing ? (
                   <>

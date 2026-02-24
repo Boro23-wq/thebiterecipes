@@ -8,9 +8,9 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <AppSidebar />
-        <main className="flex-1">
+        <main className="flex-1 min-w-0">
           <div className="border-b">
             <div className="flex h-16 items-center px-6">
               <SidebarTrigger />

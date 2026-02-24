@@ -173,3 +173,172 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .scroller {
+    --gradient-size-start: 0px;
+    --gradient-size-end: 0px;
+
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--gradient-size-start),
+      #000 calc(100% - var(--gradient-size-end)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--gradient-size-start),
+      #000 calc(100% - var(--gradient-size-end)),
+      transparent 100%
+    );
+
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+  }
+
+  @media (max-width: 688px) {
+    .scroller {
+      --gradient-size-start: 2px;
+      --gradient-size-end: 25%;
+    }
+  }
+}
+
+/* Scrollbar */
+.scrollbar-bite {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+.scrollbar-bite::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-bite::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-bite::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 999px;
+}
+
+.scrollbar-bite::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+/* Fade both left + right */
+.scroll-fade-x {
+  /* --fade: 26px; */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--gradient-size-start),
+    #000 calc(100% - var(--gradient-size-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--gradient-size-start),
+    #000 calc(100% - var(--gradient-size-end)),
+    transparent 100%
+  );
+}
+
+/* Fade only right (when at start) */
+.scroll-fade-right {
+  --fade: 26px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+}
+
+/* Fade only left (when at end) */
+.scroll-fade-left {
+  --fade: 26px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--fade),
+    black 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--fade),
+    black 100%
+  );
+}
+
+/* Fade both top + bottom */
+.scroll-fade-y {
+  --fade: 18px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--fade),
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--fade),
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+}
+
+/* Fade only bottom (use when at top) */
+.scroll-fade-bottom {
+  --fade: 18px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--fade)),
+    transparent 100%
+  );
+}
+
+/* Fade only top (use when at bottom) */
+.scroll-fade-top {
+  --fade: 18px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--fade),
+    black 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--fade),
+    black 100%
+  );
+}
+
+[data-sonner-toast] {
+  border-radius: 0.125rem !important; /* rounded-sm */
+  border-width: 1px !important;
+}

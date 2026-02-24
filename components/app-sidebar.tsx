@@ -8,6 +8,7 @@ import {
   Heart,
   Settings,
   LogOut,
+  CalendarPlus,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -43,6 +44,11 @@ const menuItems = [
     title: "Create Recipe",
     url: "/dashboard/recipes/new",
     icon: Plus,
+  },
+  {
+    title: "Create Meal Plan",
+    url: "/dashboard/meal-plan",
+    icon: CalendarPlus,
   },
   {
     title: "Categories",

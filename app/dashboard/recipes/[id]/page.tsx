@@ -82,19 +82,19 @@ export default async function RecipeDetailPage({
   }));
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-white to-brand-50">
+    <div className="min-h-screen overflow-x-hidden bg-linear-to-b from-white to-brand-50">
       {/* Header Bar */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto py-3 mb-2 flex items-center justify-between">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="text"
+            size="none"
             asChild
             className="text-text-secondary"
           >
             <Link href="/dashboard/recipes">
               <ArrowLeft />
-              Back to Recipes
+              Recipes
             </Link>
           </Button>
 
@@ -237,8 +237,8 @@ export default async function RecipeDetailPage({
 
         {/* Floating Category Badge */}
         {recipe.category && (
-          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-sm shadow-brand-sm">
-            <span className="text-xs font-medium text-text-primary">
+          <div className="absolute top-4 bg-white/95 backdrop-blur-sm px-2 py-2 mx-4 rounded-sm shadow-brand-sm">
+            <span className="text-xs font-medium text-text-primary break-all">
               {recipe.category}
             </span>
           </div>
@@ -257,12 +257,12 @@ export default async function RecipeDetailPage({
           <Card className="p-6 mb-6 shadow-xs shadow-black/5">
             <div className={spacing.cardLarge}>
               <div>
-                <h1 className="text-3xl font-semibold text-text-primary mb-2">
+                <h1 className="text-3xl font-semibold text-text-primary mb-2 break-all">
                   {recipe.title}
                 </h1>
 
                 {recipe.description && (
-                  <p className="text-base text-text-secondary mb-3 leading-relaxed">
+                  <p className="text-base text-text-secondary mb-3 leading-relaxed break-all">
                     {recipe.description}
                   </p>
                 )}
@@ -271,7 +271,7 @@ export default async function RecipeDetailPage({
                   <p
                     className={cn(
                       text.bodyLarge,
-                      "flex items-center gap-2 text-text-secondary",
+                      "flex items-center gap-2 text-text-secondary break-all",
                     )}
                   >
                     <span className="w-1 h-1 rounded-full bg-brand" />
