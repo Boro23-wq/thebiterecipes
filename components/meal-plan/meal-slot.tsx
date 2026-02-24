@@ -138,7 +138,7 @@ export default function MealSlot({
                     onClick={() => handleRemove(mpr.id)}
                     variant="destructive-light"
                     size="icon-xs"
-                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                     aria-label="Remove"
                   >
                     <X className="h-3 w-3" />
@@ -179,7 +179,7 @@ export default function MealSlot({
                     onClick={() => handleRemove(mpr.id)}
                     variant="destructive-light"
                     size="icon-xs"
-                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                     aria-label="Remove"
                   >
                     <X className="h-3 w-3" />

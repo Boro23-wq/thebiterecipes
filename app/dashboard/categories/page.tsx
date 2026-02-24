@@ -29,7 +29,6 @@ export default async function CategoriesPage() {
             },
           },
         },
-        limit: 4,
       },
     },
   });
@@ -84,9 +83,9 @@ export default async function CategoriesPage() {
               description={category.description}
               isPinned={category.isPinned}
               recipeCount={category.recipeCategories.length}
-              recipeImages={category.recipeCategories.map(
-                (rc) => rc.recipe.imageUrl,
-              )}
+              recipeImages={category.recipeCategories
+                .slice(0, 4)
+                .map((rc) => rc.recipe.imageUrl)}
             />
           ))}
         </div>

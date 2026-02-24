@@ -37,7 +37,7 @@ export default function RecipeSidebar({
     ghost.style.left = "-1000px";
     ghost.style.width = "200px";
     ghost.style.padding = "10px 12px";
-    ghost.style.borderRadius = "12px";
+    ghost.style.borderRadius = "2px";
     ghost.style.background = "rgba(255, 255, 255, 0.92)";
     ghost.style.border = "1px solid rgba(255, 107, 53, 0.25)";
     ghost.style.boxShadow = "0 8px 24px rgba(0,0,0,0.06)";
