@@ -6,7 +6,6 @@ import { categories } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import {
   ArrowLeft,
-  Sparkles,
   Tag,
   Wand2,
   Flame,
@@ -166,7 +165,6 @@ export default async function EditCategoryPage({
                 variant="brand"
                 className="cursor-pointer gap-2"
               >
-                <Sparkles className="h-4 w-4" />
                 Save Changes
               </Button>
 

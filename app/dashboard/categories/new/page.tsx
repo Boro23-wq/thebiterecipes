@@ -1,15 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Sparkles,
-  Tag,
-  Wand2,
-  Flame,
-  Leaf,
-  Clock3,
-} from "lucide-react";
+import { ArrowLeft, Tag, Wand2, Flame, Leaf, Clock3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,7 +137,6 @@ export default async function NewCategoryPage() {
                 variant="brand"
                 className="cursor-pointer gap-2"
               >
-                <Sparkles className="h-4 w-4" />
                 Create Category
               </Button>
 

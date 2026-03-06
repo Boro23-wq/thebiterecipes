@@ -4,12 +4,12 @@ import { db } from "@/db";
 import { categories, recipes as allRecipes } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { RecipeCard } from "@/components/recipe-card";
 import { ArrowLeft, Edit, FolderOpen, Pin, Plus } from "lucide-react";
 import Link from "next/link";
 import { TogglePinButton } from "@/components/toggle-pin-button";
 import { DeleteCategoryButton } from "@/components/delete-category-button";
 import AddRecipeToCategoryButton from "@/components/add-recipe-to-category-button";
+import { RecipeGridView } from "@/components/recipes-grid-view";
 
 export default async function CategoryDetailPage({
   params,
@@ -90,63 +90,41 @@ export default async function CategoryDetailPage({
       </div>
 
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-sm border border-border-light bg-background">
-        <div className="pointer-events-none absolute -top-20 -right-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-70" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-60" />
+      <div className="rounded-sm border border-border-brand-light bg-white overflow-hidden flex">
+        <div className="w-1 shrink-0 bg-brand" />
 
-        <div className="relative p-6 sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="min-w-0">
-                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-sm bg-brand-100">
-                    <FolderOpen className="h-7 w-7 text-brand" />
-                  </div>
-
-                  <div className="min-w-0 flex flex-wrap items-center gap-3">
-                    <h1 className="min-w-0 max-w-full text-2xl font-semibold tracking-tight text-text-primary break-all">
-                      {category.name}
-                    </h1>
-
-                    {category.isPinned && (
-                      <span className="shrink-0 inline-flex items-center gap-2 rounded-sm bg-brand-100 px-3 py-1 text-xs font-medium text-text-primary">
-                        <Pin className="h-3.5 w-3.5 text-brand fill-brand" />
-                        <span className="text-brand">Pinned</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {category.description ? (
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary break-all">
-                      {category.description}
-                    </p>
-                  ) : (
-                    <p className="mt-2 max-w-2xl text-sm text-text-muted">
-                      No description yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="bg-secondary inline-flex items-center rounded-sm px-3 py-1 text-sm">
-                  <span className="font-medium text-white">
-                    {categoryRecipes.length}
+        <div className="flex-1 px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <FolderOpen className="h-5 w-5 shrink-0 text-brand" />
+              <h1 className="text-lg font-bold text-text-primary truncate">
+                {category.name}
+              </h1>
+              {category.isPinned && (
+                <span className="shrink-0 flex items-center gap-1 bg-brand-50 px-2 py-0.5 rounded-sm">
+                  <Pin className="h-3 w-3 text-brand fill-brand" />
+                  <span className="text-[10px] font-medium text-brand">
+                    Pinned
                   </span>
-                  <span className="ml-1 text-white">
-                    {categoryRecipes.length === 1 ? "recipe" : "recipes"}
-                  </span>
-                </div>
+                </span>
+              )}
+            </div>
 
-                <div className="h-5 w-px bg-border-light hidden sm:block" />
-
-                <p className="text-sm text-text-muted">
-                  Manage recipes in this category.
-                </p>
-              </div>
+            <div className="shrink-0 ml-4 flex items-center gap-1.5 text-sm">
+              <span className="font-bold text-brand">
+                {categoryRecipes.length}
+              </span>
+              <span className="text-text-muted">
+                {categoryRecipes.length === 1 ? "recipe" : "recipes"}
+              </span>
             </div>
           </div>
+
+          {category.description && (
+            <p className="text-sm text-text-muted mt-1 pl-8 truncate">
+              {category.description}
+            </p>
+          )}
         </div>
       </div>
 
@@ -164,12 +142,13 @@ export default async function CategoryDetailPage({
         <AddRecipeToCategoryButton
           categoryId={category.id}
           categoryName={category.name}
+          categoryDescription={category.description ?? undefined}
           recipes={userRecipes}
           existingRecipeIds={existingRecipeIds}
         />
       </div>
 
-      {/* Recipes Grid / Empty */}
+      {/* Recipes */}
       {categoryRecipes.length === 0 ? (
         <div className="relative overflow-hidden rounded-sm border border-border-light border-dashed bg-background">
           <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-sm bg-brand-100 blur-3xl opacity-60" />
@@ -190,11 +169,12 @@ export default async function CategoryDetailPage({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {categoryRecipes.map((recipe) => (
-            <RecipeCard key={recipe.id} {...recipe} />
-          ))}
-        </div>
+        <RecipeGridView
+          initialRecipes={categoryRecipes}
+          totalCount={categoryRecipes.length}
+          context="category"
+          categoryId={category.id}
+        />
       )}
     </div>
   );

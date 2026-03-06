@@ -183,7 +183,7 @@ export function IngredientsList({
             </span>
             <div className="flex-1">
               {ing.amount ? (
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-1">
                   <span className="shrink-0 text-sm font-semibold text-text-primary">
                     {scaleAmount(ing.amount)}
                   </span>

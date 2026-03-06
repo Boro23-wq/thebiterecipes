@@ -93,7 +93,7 @@ export function SourceBadge({
       <button
         type="button"
         onClick={onCopy}
-        className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary"
+        className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary cursor-pointer"
       >
         {copied ? (
           <>

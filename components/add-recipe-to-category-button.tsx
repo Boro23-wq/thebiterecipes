@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   addRecipeToCategory,
@@ -29,6 +29,7 @@ type Recipe = {
 export default function AddRecipeToCategoryButton({
   categoryId,
   categoryName,
+  categoryDescription,
   recipes,
   existingRecipeIds = [],
 }: {
@@ -36,12 +37,13 @@ export default function AddRecipeToCategoryButton({
   categoryName?: string;
   recipes: Recipe[];
   existingRecipeIds?: string[];
+  categoryDescription?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [isAdding, setIsAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const existingSet = useMemo(
@@ -67,7 +69,6 @@ export default function AddRecipeToCategoryButton({
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
@@ -75,20 +76,30 @@ export default function AddRecipeToCategoryButton({
 
   async function onAdd() {
     if (selectedIds.size === 0) return;
-    await Promise.all(
-      [...selectedIds].map((id) => addRecipeToCategory(id, categoryId)),
-    );
-    setOpen(false);
-    setSelectedIds(new Set());
-    setSearch("");
-    startTransition(() => router.refresh());
+
+    setIsAdding(true);
+
+    try {
+      await Promise.all(
+        [...selectedIds].map((id) => addRecipeToCategory(id, categoryId)),
+      );
+
+      setOpen(false);
+      setSelectedIds(new Set());
+      setSearch("");
+
+      router.refresh();
+    } finally {
+      setIsAdding(false);
+    }
   }
 
   async function onRemove(recipeId: string) {
     setRemovingId(recipeId);
+
     try {
       await removeRecipeFromCategory(recipeId, categoryId);
-      startTransition(() => router.refresh());
+      router.refresh();
     } finally {
       setRemovingId(null);
     }
@@ -152,6 +163,7 @@ export default function AddRecipeToCategoryButton({
           <div className="text-sm font-medium truncate text-text-primary">
             {recipe.title}
           </div>
+
           <div className="flex items-center gap-3 mt-0.5 text-xs text-text-muted">
             {recipe.totalTime != null && recipe.totalTime > 0 && (
               <span className="flex items-center gap-1">
@@ -159,6 +171,7 @@ export default function AddRecipeToCategoryButton({
                 {recipe.totalTime}m
               </span>
             )}
+
             {recipe.servings != null && recipe.servings > 0 && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
@@ -209,27 +222,23 @@ export default function AddRecipeToCategoryButton({
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="sm:max-w-md overflow-hidden [&>button]:hidden"
+          className="sm:max-w-md overflow-hidden"
           style={{
             maxHeight: "70vh",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0">
-            <DialogTitle className="text-base font-semibold">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="font-semibold">
               {categoryName ? `Manage ${categoryName}` : "Manage Recipes"}
             </DialogTitle>
-            <DialogClose asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="cursor-pointer -mr-2"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
+
+            <DialogDescription>
+              {categoryDescription?.trim()
+                ? categoryDescription
+                : "No description for this category"}
+            </DialogDescription>
           </DialogHeader>
 
           {/* Search */}
@@ -248,25 +257,26 @@ export default function AddRecipeToCategoryButton({
             className="overflow-y-auto scrollbar-bite -mx-1 px-1 space-y-1"
             style={{ minHeight: 0 }}
           >
-            {/* Existing recipes in category */}
             {existing.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-text-muted px-2 py-1.5">
+                <p className="text-xs font-medium text-text-muted pt-1 pb-2">
                   In this category ({existing.length})
                 </p>
+
                 {existing.map((r) => (
                   <RecipeRow key={r.id} recipe={r} mode="existing" />
                 ))}
               </div>
             )}
 
-            {/* Available recipes */}
             {available.length > 0 && (
               <div>
                 {existing.length > 0 && <div className="my-2" />}
+
                 <p className="text-xs font-medium text-text-muted px-2 py-1.5">
                   Available recipes ({available.length})
                 </p>
+
                 {available.map((r) => (
                   <RecipeRow key={r.id} recipe={r} mode="available" />
                 ))}
@@ -287,23 +297,25 @@ export default function AddRecipeToCategoryButton({
                 ? `${selectedIds.size} selected to add`
                 : "Select recipes to add"}
             </span>
+
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-1">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={pending}
+                disabled={isAdding}
                 className="rounded-sm w-full sm:w-auto cursor-pointer"
               >
                 Cancel
               </Button>
+
               <Button
                 type="button"
                 onClick={onAdd}
-                disabled={selectedIds.size === 0 || pending}
+                disabled={selectedIds.size === 0 || isAdding}
                 className="rounded-sm bg-brand hover:bg-brand/90 text-white w-full sm:w-auto cursor-pointer"
               >
-                {pending
+                {isAdding
                   ? "Adding..."
                   : selectedIds.size > 1
                     ? `Add (${selectedIds.size})`

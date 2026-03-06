@@ -84,8 +84,9 @@ export default async function CategoriesPage() {
               isPinned={category.isPinned}
               recipeCount={category.recipeCategories.length}
               recipeImages={category.recipeCategories
-                .slice(0, 4)
-                .map((rc) => rc.recipe.imageUrl)}
+                .map((rc) => rc.recipe.imageUrl)
+                .filter((img): img is string => !!img)
+                .slice(0, 4)}
             />
           ))}
         </div>

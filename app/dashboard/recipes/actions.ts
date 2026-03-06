@@ -516,3 +516,95 @@ export async function toggleFavorite(recipeId: string) {
 
   return { isFavorite: !recipe.isFavorite };
 }
+
+export async function fetchFilteredRecipes(input: {
+  categoryId?: string;
+  favoritesOnly?: boolean;
+  cursor?: { createdAt: string; id: string } | null;
+  limit?: number;
+}) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const {
+    categoryId,
+    favoritesOnly = false,
+    cursor = null,
+    limit = 24,
+  } = input;
+
+  let recipeIds: string[] | null = null;
+
+  // If filtering by category, get recipe IDs from junction table
+  if (categoryId) {
+    const { recipeCategories } = await import("@/db/schema");
+    const rows = await db
+      .select({ recipeId: recipeCategories.recipeId })
+      .from(recipeCategories)
+      .where(eq(recipeCategories.categoryId, categoryId));
+    recipeIds = rows.map((r) => r.recipeId);
+
+    if (recipeIds.length === 0) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+  }
+
+  const conditions = [eq(recipes.userId, user.id)];
+
+  if (recipeIds) {
+    conditions.push(inArray(recipes.id, recipeIds));
+  }
+
+  if (favoritesOnly) {
+    conditions.push(eq(recipes.isFavorite, true));
+  }
+
+  if (cursor) {
+    conditions.push(
+      sql`(
+        ${recipes.createdAt} < ${cursor.createdAt} OR
+        (${recipes.createdAt} = ${cursor.createdAt} AND ${recipes.id} < ${cursor.id})
+      )`,
+    );
+  }
+
+  const whereClause = and(...conditions);
+
+  const rows = await db.query.recipes.findMany({
+    where: whereClause,
+    orderBy: () => [desc(recipes.createdAt), desc(recipes.id)],
+    limit: limit + 1,
+  });
+
+  const hasNext = rows.length > limit;
+  const items = hasNext ? rows.slice(0, limit) : rows;
+
+  let nextCursor: { createdAt: string; id: string } | null = null;
+  if (hasNext) {
+    const last = items[items.length - 1]!;
+    nextCursor = {
+      createdAt:
+        typeof last.createdAt === "string"
+          ? last.createdAt
+          : last.createdAt.toISOString(),
+      id: last.id,
+    };
+  }
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(recipes)
+    .where(
+      and(
+        ...conditions.filter(
+          (_, i) => i < conditions.length - (cursor ? 1 : 0),
+        ),
+      ),
+    );
+
+  return {
+    items,
+    nextCursor,
+    totalCount: Number(count),
+  };
+}
