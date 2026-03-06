@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { addRecipeToMealPlan } from "@/app/dashboard/meal-plan/actions";
 import { MealType, Recipe } from "@/app/dashboard/meal-plan/types";
@@ -59,20 +60,18 @@ export default function RecipePickerDialog(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md [&>button]:hidden pt-4">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
+      <DialogContent
+        className="sm:max-w-md overflow-hidden"
+        style={{
+          maxHeight: "70vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <DialogHeader className="flex items-start mb-2">
+          <DialogTitle className="font-semibold">{title}</DialogTitle>
 
-          <DialogClose asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="cursor-pointer"
-              aria-label="Close"
-            >
-              <X />
-            </Button>
-          </DialogClose>
+          <DialogDescription>Add meals to your calendar</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -109,7 +108,7 @@ export default function RecipePickerDialog(props: {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold line-clamp-1 break-all">
+                    <div className="text-sm font-semibold line-clamp-1 wrap-break-word">
                       {r.title}
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">

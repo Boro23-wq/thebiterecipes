@@ -7,6 +7,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -70,32 +71,21 @@ export default function GroceryListButton({
         side={isDesktop ? "right" : "bottom"}
         className={
           isDesktop
-            ? "w-full sm:max-w-lg p-0 [&>button]:hidden overflow-y-auto scrollbar-bite"
-            : "h-[90vh] p-0 [&>button]:hidden"
+            ? "w-full sm:max-w-lg p-0 overflow-y-auto scrollbar-bite"
+            : "h-[90vh] p-0"
         }
       >
-        <SheetHeader className={isDesktop ? "p-3" : "p-3"}>
-          {" "}
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-bold flex items-center gap-2">
-              <ShoppingCart className="h-8 w-8 bg-brand p-2 text-white rounded-sm" />
-            </SheetTitle>
-
-            <SheetClose asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="cursor-pointer -mr-2"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </SheetClose>
-          </div>
+        <SheetHeader>
+          <SheetTitle className="text-xl font-semibold">
+            Grocery List
+          </SheetTitle>
+          <SheetDescription>
+            Ingredients from meal plan, organized into a smart grocery list.
+          </SheetDescription>
         </SheetHeader>
 
         <div
-          className={`px-4 overflow-y-auto scrollbar-bite ${isDesktop ? "py-2 h-auto" : "pt-0 pb-2 h-[calc(90vh-52px)]"}`}
+          className={`px-4 overflow-y-auto scrollbar-bite ${isDesktop ? "pb-2 h-auto" : "pt-0 pb-2 h-[calc(90vh-52px)]"}`}
         >
           <GroceryListView
             mealPlanId={mealPlanId}

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { RefreshCw, Plus, Download, Share2, Trash2 } from "lucide-react";
 import {
   generateGroceryList,
@@ -275,7 +274,6 @@ export default function GroceryListView({
         {/* Header with actions - Same on all screens */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold">Grocery List</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {checkedCount} of {totalCount} items checked
             </p>

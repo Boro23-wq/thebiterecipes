@@ -203,25 +203,9 @@ export default function RecipeSidebar({
                   {/* Body */}
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-semibold text-sm line-clamp-1 leading-snug text-text-primary break-all">
+                      <p className="font-semibold text-sm line-clamp-1 leading-snug text-text-primary wrap-break-word">
                         {recipe.title}
                       </p>
-
-                      {/* <button
-                        type="button"
-                        onClick={() => setQuickAddRecipeId(recipe.id)}
-                        className={[
-                          "md:hidden",
-                          "shrink-0 inline-flex items-center gap-1",
-                          "rounded-sm px-2 py-1",
-                          "bg-[#FF6B35] text-white",
-                          "text-[11px] font-semibold",
-                          "cursor-pointer",
-                        ].join(" ")}
-                      >
-                        <Plus className="h-3 w-3" />
-                        Add
-                      </button> */}
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-text-secondary">
@@ -240,7 +224,7 @@ export default function RecipeSidebar({
                       {recipe.cuisine ? (
                         <span className="inline-flex items-center gap-2">
                           <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B35]/50" />
-                          <p className="text-xs line-clamp-1 leading-snug text-text-secondary break-all">
+                          <p className="text-xs line-clamp-1 leading-snug text-text-secondary wrap-break-word">
                             {recipe.cuisine}
                           </p>
                         </span>

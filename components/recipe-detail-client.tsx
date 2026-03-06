@@ -231,7 +231,7 @@ export function RecipeDetailClient({
             {instructions.length > 0 ? (
               <ol className={spacing.cardLarge}>
                 {instructions.map((inst) => (
-                  <li key={inst.id} className="flex gap-4 break-all">
+                  <li key={inst.id} className="flex gap-4 wrap-break-word">
                     <span className="shrink-0 w-8 h-8 rounded-sm bg-brand text-white flex items-center justify-center text-sm font-semibold shadow-brand-focus">
                       {inst.order}
                     </span>
@@ -262,7 +262,7 @@ export function RecipeDetailClient({
               <p
                 className={cn(
                   text.body,
-                  "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap break-all",
+                  "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap wrap-break-word",
                 )}
               >
                 {recipe.notes}
