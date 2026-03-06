@@ -16,6 +16,7 @@ import {
 } from "@/app/dashboard/categories/actions";
 import { useTransition } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { DeleteMenuItem } from "./delete-menu-item";
 
 interface CategoryCardProps {
@@ -37,16 +38,21 @@ export function CategoryCard({
 }: CategoryCardProps) {
   const [isPending, startTransition] = useTransition();
 
-  const handlePin = () => {
-    startTransition(async () => {
-      try {
-        await togglePinCategory(id);
-      } catch (error) {
-        alert(
-          error instanceof Error ? error.message : "Failed to pin category",
-        );
+  const handlePin = async () => {
+    try {
+      const result = await togglePinCategory(id);
+
+      if (!result?.success) {
+        toast.error(result?.error ?? "Failed to pin category");
+        return;
       }
-    });
+
+      toast.success(
+        isPinned ? `Category ${name} unpinned` : `Category ${name} pinned`,
+      );
+    } catch (error) {
+      toast.error("Failed to pin category");
+    }
   };
 
   const handleDelete = () => {
@@ -198,7 +204,7 @@ export function CategoryCard({
               disabled={isPending}
             >
               <Pin className="mr-2 h-4 w-4" />
-              {isPinned ? "Unpin" : "Pin to Dashboard"}
+              {isPinned ? "Unpin Category" : "Pin Category"}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator className="bg-border-light" />

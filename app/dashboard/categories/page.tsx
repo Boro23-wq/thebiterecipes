@@ -5,8 +5,10 @@ import { categories } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderOpen } from "lucide-react";
+import { text } from "@/lib/design-tokens";
 import Link from "next/link";
 import { CategoryCard } from "@/components/category-card";
+import { cn } from "@/lib/utils";
 
 export default async function CategoriesPage() {
   const user = await currentUser();
@@ -32,6 +34,9 @@ export default async function CategoriesPage() {
       },
     },
   });
+
+  const pinnedCategories = userCategories.filter((c) => c.isPinned);
+  const otherCategories = userCategories.filter((c) => !c.isPinned);
 
   return (
     <div className="space-y-6">
@@ -74,21 +79,65 @@ export default async function CategoriesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userCategories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              id={category.id}
-              name={category.name}
-              description={category.description}
-              isPinned={category.isPinned}
-              recipeCount={category.recipeCategories.length}
-              recipeImages={category.recipeCategories
-                .map((rc) => rc.recipe.imageUrl)
-                .filter((img): img is string => !!img)
-                .slice(0, 4)}
-            />
-          ))}
+        <div className="space-y-8">
+          {/* Pinned Categories */}
+          {pinnedCategories.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div>
+                  <h2 className={text.h3}>Pinned Categories</h2>
+                  <p className={cn(text.muted, "mt-0.5")}>
+                    Quick access to your favorite collections
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pinnedCategories.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    isPinned={category.isPinned}
+                    recipeCount={category.recipeCategories.length}
+                    recipeImages={category.recipeCategories
+                      .map((rc) => rc.recipe.imageUrl)
+                      .filter((img): img is string => !!img)
+                      .slice(0, 4)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Categories */}
+          {otherCategories.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-text-primary">
+                  All Categories
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {otherCategories.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    isPinned={category.isPinned}
+                    recipeCount={category.recipeCategories.length}
+                    recipeImages={category.recipeCategories
+                      .map((rc) => rc.recipe.imageUrl)
+                      .filter((img): img is string => !!img)
+                      .slice(0, 4)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

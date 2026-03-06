@@ -65,27 +65,32 @@ export async function deleteCategory(categoryId: string) {
 
 export async function togglePinCategory(categoryId: string) {
   const user = await currentUser();
-  if (!user) throw new Error("Unauthorized");
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
 
-  // Get current category
   const category = await db.query.categories.findFirst({
     where: and(eq(categories.id, categoryId), eq(categories.userId, user.id)),
   });
 
-  if (!category) throw new Error("Category not found");
+  if (!category) {
+    return { success: false, error: "Category not found" };
+  }
 
-  // If trying to pin, check limit
   if (!category.isPinned) {
     const pinnedCount = await db.query.categories.findMany({
       where: and(eq(categories.userId, user.id), eq(categories.isPinned, true)),
+      columns: { id: true },
     });
 
     if (pinnedCount.length >= 5) {
-      throw new Error("Maximum 5 pinned categories allowed");
+      return {
+        success: false,
+        error: "You can only pin up to 5 categories",
+      };
     }
   }
 
-  // Toggle pin
   await db
     .update(categories)
     .set({
@@ -96,6 +101,8 @@ export async function togglePinCategory(categoryId: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/categories");
+
+  return { success: true };
 }
 
 export async function addRecipeToCategory(

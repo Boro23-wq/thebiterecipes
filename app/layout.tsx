@@ -32,7 +32,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           {children}
-          <Toaster position="bottom-center" />
+          <Toaster richColors position="top-right" />
         </ClerkProvider>
         <script
           dangerouslySetInnerHTML={{
