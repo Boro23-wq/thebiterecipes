@@ -4,14 +4,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import {
-  ArrowLeft,
-  Tag,
-  Wand2,
-  Flame,
-  Leaf,
-  Clock3,
-} from "lucide-react";
+import { ArrowLeft, Tag, Wand2, Flame, Leaf, Clock3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +56,7 @@ export default async function EditCategoryPage({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
-                Edit category ✍️
+                Edit category
               </h1>
               <p className="text-sm text-text-secondary mt-1">
                 Tweak the name + notes so it stays useful over time.
