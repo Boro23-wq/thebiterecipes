@@ -126,34 +126,43 @@ export default function GroceryItem({ item }: GroceryItemProps) {
         <div className="flex items-start justify-between gap-2">
           {isEditing ? (
             // Edit mode
-            <div className="flex items-start gap-3 ">
-              <Input
-                value={editAmount}
-                onChange={(e) => setEditAmount(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveEdit();
-                  if (e.key === "Escape") handleCancelEdit();
-                }}
-                className="h-7 w-24 text-sm rounded-sm border-border-light"
-                placeholder="2 cups"
-                autoFocus
-                disabled={isSaving}
-              />
-              <span className="text-sm font-medium">{item.ingredient}</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-3">
+              {/* Left side */}
+              <div className="flex items-center gap-3 min-w-0">
+                <Input
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveEdit();
+                    if (e.key === "Escape") handleCancelEdit();
+                  }}
+                  className="h-7 w-24 text-sm rounded-sm border-border-light"
+                  placeholder="2 cups"
+                  autoFocus
+                  disabled={isSaving}
+                />
+
+                <span className="text-sm font-medium truncate">
+                  {item.ingredient}
+                </span>
+              </div>
+
+              {/* Right side buttons */}
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   onClick={handleSaveEdit}
                   disabled={isSaving}
                   size="icon"
-                  className="h-6 w-6 bg-white hover:bg-green-100"
+                  className="h-6 w-6 bg-white hover:bg-green-50"
                 >
-                  <Check className="h-3 w-3 text-green-600 " />
+                  <Check className="h-3 w-3 text-green-600" />
                 </Button>
+
                 <Button
                   onClick={handleCancelEdit}
                   disabled={isSaving}
                   size="icon"
-                  className="h-6 w-6 bg-white hover:bg-red-100"
+                  className="h-6 w-6 bg-white hover:bg-red-50"
                 >
                   <X className="h-3 w-3 text-red-600" />
                 </Button>
@@ -164,7 +173,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
             <>
               <p
                 className={cn(
-                  "text-sm font-medium leading-tight line-clamp-2 break-all",
+                  "text-sm font-medium leading-tight line-clamp-2 wrap-break-word",
                   item.isChecked && "line-through",
                 )}
               >
@@ -185,7 +194,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                 {item.amount && !item.isChecked && (
                   <Button
                     onClick={handleStartEdit}
-                    variant="ghost"
+                    variant="text"
                     size="icon-xs"
                     className="h-7 w-7 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                   >

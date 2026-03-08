@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { addRecipeToMealPlan } from "@/app/dashboard/meal-plan/actions";
 import { MealType } from "@/app/dashboard/meal-plan/types";
@@ -61,22 +62,11 @@ export default function QuickAddDialog(props: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md [&>button]:hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-2">
-          <DialogTitle className="text-base font-semibold">
-            Quick add
-          </DialogTitle>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="flex items-start mb-1">
+          <DialogTitle className="font-semibold">Quick add</DialogTitle>
 
-          <DialogClose asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="cursor-pointer"
-              aria-label="Close"
-            >
-              <X />
-            </Button>
-          </DialogClose>
+          <DialogDescription>Add meals to your calendar</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -149,7 +139,7 @@ export default function QuickAddDialog(props: {
               disabled={pending || !recipeId}
               className="rounded-sm bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white"
             >
-              Add
+              {pending ? "Adding..." : "Add"}
             </Button>
           </div>
         </div>

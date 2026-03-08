@@ -40,9 +40,10 @@ export const card = {
 export const layout = {
   page: "min-h-screen",
   container: "max-w-5xl mx-auto px-6",
-  containerSmall: "max-w-3xl mx-auto px-0 sm:px-6",
+  containerSmall: "max-w-3xl mx-auto px-1.5 sm:px-6",
   grid2: "grid grid-cols-1 md:grid-cols-2 gap-4",
-  grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+  grid3:
+    "grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4",
   // grid4: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3",
   grid4: "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4",
 } as const;

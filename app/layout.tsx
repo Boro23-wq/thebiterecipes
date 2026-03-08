@@ -16,24 +16,36 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Bite — AI Recipe Manager",
-  description: "Your recipes, organized",
+  description: "All your recipes organized in one place, powered by AI.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#FEFEFE]`}
-        >
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#FEFEFE]`}
+      >
+        <ClerkProvider>
           {children}
-          <Toaster position="bottom-center" />
-        </body>
-      </html>
-    </ClerkProvider>
+          <Toaster richColors position="top-right" />
+        </ClerkProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
+      </body>
+    </html>
   );
 }

@@ -176,19 +176,19 @@ export function IngredientsList({
         {ingredients.map((ing, index) => (
           <li
             key={ing.id}
-            className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors break-all"
+            className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors wrap-break-word"
           >
             <span className="shrink-0 w-6 h-6 rounded-sm bg-brand-100 text-brand flex items-center justify-center text-xs font-medium">
               {index + 1}
             </span>
             <div className="flex-1">
               {ing.amount ? (
-                <div className="flex items-start gap-2">
-                  <span className="shrink-0 text-sm font-semibold text-text-primary">
-                    {scaleAmount(ing.amount)}
+                <span className={cn(text.body)}>
+                  <span className="font-semibold text-text-primary">
+                    {scaleAmount(ing.amount)}{" "}
                   </span>
-                  <span className={cn(text.body)}>{ing.ingredient}</span>
-                </div>
+                  {ing.ingredient}
+                </span>
               ) : (
                 <span className={cn(text.body)}>
                   {scaleIngredient(ing.ingredient)}

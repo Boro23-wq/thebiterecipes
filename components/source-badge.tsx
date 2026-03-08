@@ -78,13 +78,15 @@ export function SourceBadge({
           href={raw}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline break-all"
+          className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline wrap-break-word"
         >
           {label}
           <ExternalLink className="h-3.5 w-3.5 text-text-secondary" />
         </a>
       ) : (
-        <span className="font-medium text-text-primary break-all">{label}</span>
+        <span className="font-medium text-text-primary wrap-break-word">
+          {label}
+        </span>
       )}
 
       <span className="h-4 w-px bg-border-light" />
@@ -93,7 +95,7 @@ export function SourceBadge({
       <button
         type="button"
         onClick={onCopy}
-        className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary"
+        className="inline-flex items-center gap-1 text-text-secondary hover:text-text-primary cursor-pointer"
       >
         {copied ? (
           <>

@@ -4,9 +4,11 @@ import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { Plus, FolderOpen } from "lucide-react";
+import { Plus, FolderOpen, Pin } from "lucide-react";
+import { text } from "@/lib/design-tokens";
 import Link from "next/link";
 import { CategoryCard } from "@/components/category-card";
+import { cn } from "@/lib/utils";
 
 export default async function CategoriesPage() {
   const user = await currentUser();
@@ -32,6 +34,9 @@ export default async function CategoriesPage() {
       },
     },
   });
+
+  const pinnedCategories = userCategories.filter((c) => c.isPinned);
+  const otherCategories = userCategories.filter((c) => !c.isPinned);
 
   return (
     <div className="space-y-6">
@@ -74,20 +79,72 @@ export default async function CategoriesPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userCategories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              id={category.id}
-              name={category.name}
-              description={category.description}
-              isPinned={category.isPinned}
-              recipeCount={category.recipeCategories.length}
-              recipeImages={category.recipeCategories
-                .slice(0, 4)
-                .map((rc) => rc.recipe.imageUrl)}
-            />
-          ))}
+        <div className="space-y-8">
+          {/* Pinned Categories */}
+          {pinnedCategories.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm ">
+                  <Pin className="h-4 w-4 text-brand " />
+                </div>
+                <span className="text-sm font-semibold text-brand">Pinned</span>
+                <span className="text-xs text-text-muted">
+                  ({pinnedCategories.length})
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pinnedCategories.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    isPinned={category.isPinned}
+                    recipeCount={category.recipeCategories.length}
+                    recipeImages={category.recipeCategories
+                      .map((rc) => rc.recipe.imageUrl)
+                      .filter((img): img is string => !!img)
+                      .slice(0, 4)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Categories */}
+          {otherCategories.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-text-muted/10">
+                  <FolderOpen className="h-4 w-4 text-text-muted" />
+                </div>
+                <span className="text-sm font-semibold text-text-primary">
+                  All Categories
+                </span>
+                <span className="text-xs text-text-muted">
+                  ({otherCategories.length})
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {otherCategories.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    isPinned={category.isPinned}
+                    recipeCount={category.recipeCategories.length}
+                    recipeImages={category.recipeCategories
+                      .map((rc) => rc.recipe.imageUrl)
+                      .filter((img): img is string => !!img)
+                      .slice(0, 4)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

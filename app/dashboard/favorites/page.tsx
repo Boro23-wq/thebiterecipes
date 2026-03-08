@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import Link from "next/link";
+import { RecipeGridView } from "@/components/recipes-grid-view";
 
 export default async function FavoritesPage() {
   const user = await currentUser();
@@ -19,72 +19,60 @@ export default async function FavoritesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero / header card (same as category page) */}
-      <div className="relative overflow-hidden rounded-sm border border-border-light bg-background">
-        {/* subtle brand glow */}
-        <div className="pointer-events-none absolute -top-20 -right-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-70" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-brand-100 blur-3xl opacity-60" />
-
-        <div className="relative p-6 sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="min-w-0">
-                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-sm bg-brand-100">
-                    <Heart className="h-7 w-7 text-brand" />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <h1 className="truncate text-2xl font-semibold tracking-tight text-text-primary">
-                      Favorites
-                    </h1>
-                  </div>
-
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
-                    The recipes you love most, all in one place.
-                  </p>
-                </div>
+      {/* Hero */}
+      <div className="rounded-sm bg-brand/5 overflow-hidden">
+        <div className="px-5 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-center h-8 w-8 rounded-sm bg-brand/10 shrink-0">
+                <Heart className="h-4 w-4 text-brand fill-brand" />
               </div>
 
-              {/* Stats row (same structure) */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="bg-secondary inline-flex items-center rounded-sm px-3 py-1 text-sm">
-                  <span className="font-medium text-white">
-                    {favoriteRecipes.length}
-                  </span>
-                  <span className="ml-1 text-white">
-                    {favoriteRecipes.length === 1 ? "recipe" : "recipes"}
-                  </span>
-                </div>
-
-                <div className="h-5 w-px bg-border-light hidden sm:block" />
-
-                <p className="text-sm text-text-muted">
-                  Tap the heart on any recipe to save it here.
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold text-text-primary break-words">
+                  Favorites
+                </h1>
+                <p className="text-sm text-text-muted break-words">
+                  The recipes you love most, all in one place.
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-sm pl-11 sm:pl-0">
+              <span className="font-bold text-brand">
+                {favoriteRecipes.length}
+              </span>
+              <span className="text-text-muted">
+                {favoriteRecipes.length === 1 ? "recipe" : "recipes"}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content header (same as category page) */}
-      <div className="flex items-end justify-between gap-4">
+      {/* Content header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">Recipes</h2>
           <p className="mt-1 text-sm text-text-secondary">
             {favoriteRecipes.length === 0
               ? "Nothing here yet — add some from your recipes."
-              : "All recipes you’ve favorited."}
+              : "All recipes you've favorited."}
           </p>
         </div>
 
-        <Button asChild variant="brand" className="cursor-pointer">
-          <Link href="/dashboard/recipes">Browse Recipes</Link>
-        </Button>
+        <div className="sm:shrink-0">
+          <Button
+            asChild
+            variant="brand"
+            className="cursor-pointer w-full sm:w-auto"
+          >
+            <Link href="/dashboard/recipes">Browse Recipes</Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Grid / Empty (same empty card style) */}
+      {/* Grid / Empty */}
       {favoriteRecipes.length === 0 ? (
         <div className="relative overflow-hidden rounded-sm border border-border-light bg-background">
           <div className="pointer-events-none absolute -top-16 right-10 h-40 w-40 rounded-full bg-brand-100 blur-3xl opacity-60" />
@@ -113,11 +101,12 @@ export default async function FavoritesPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {favoriteRecipes.map((recipe) => (
-            <RecipeCard key={recipe.id} {...recipe} />
-          ))}
-        </div>
+        <RecipeGridView
+          initialRecipes={favoriteRecipes}
+          totalCount={favoriteRecipes.length}
+          favoritesOnly
+          context="favorites"
+        />
       )}
     </div>
   );

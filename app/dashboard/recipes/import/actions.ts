@@ -393,7 +393,14 @@ export async function importRecipe(data: ParsedRecipe) {
   const user = await currentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const pickedImageUrls = pickBestPerFolder(data.imageUrls ?? [], 3);
+  const allImageUrls = [
+    ...(data.imageUrls ?? []),
+    ...(data.imageUrl && !data.imageUrls?.includes(data.imageUrl)
+      ? [data.imageUrl]
+      : []),
+  ].filter(Boolean);
+
+  const pickedImageUrls = pickBestPerFolder(allImageUrls, 3);
 
   const hostedImageUrls: string[] = [];
   for (const url of pickedImageUrls) {
@@ -442,6 +449,7 @@ export async function importRecipe(data: ParsedRecipe) {
   // Ingredients (parse amount so UI can bold quantities)
   const ingredientLines = (data.ingredients ?? [])
     .map((s) => s.trim())
+    .map((s) => s.replace(/^[-–—•·*]\s*/, ""))
     .filter(Boolean);
   if (ingredientLines.length > 0) {
     await db.insert(recipeIngredients).values(

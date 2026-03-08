@@ -136,7 +136,7 @@ export default async function DashboardPage() {
       {/* Pinned Categories Section */}
       {pinnedCategories.length > 0 && (
         <div className={spacing.card}>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div>
               <h2 className={text.h3}>Pinned Categories</h2>
               <p className={cn(text.muted, "mt-0.5")}>
@@ -147,28 +147,39 @@ export default async function DashboardPage() {
               variant="ghost"
               size="sm"
               asChild
-              className="text-brand hover:text-brand hover:bg-brand-50 cursor-pointer"
+              className="cursor-pointer"
             >
               <Link href="/dashboard/categories">
-                <FolderOpen className={icon.small} />
                 View All
+                <ArrowRight className={icon.small} />
               </Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {pinnedCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                id={category.id}
-                name={category.name}
-                description={category.description}
-                isPinned={category.isPinned}
-                recipeCount={category.recipeCategories.length}
-                recipeImages={category.recipeCategories.map(
-                  (rc) => rc.recipe.imageUrl,
-                )}
-              />
-            ))}
+
+          <div className="relative -mr-6 md:mx-0">
+            {/* Fade edges - at container edges */}
+            {/* <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-linear-to-r from-white to-transparent z-10 md:hidden" /> */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-linear-to-l from-white to-transparent z-10 md:hidden" />
+
+            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {pinnedCategories.map((category) => (
+                <div
+                  key={category.id}
+                  className="min-w-65 snap-start md:min-w-0 self-stretch"
+                >
+                  <CategoryCard
+                    id={category.id}
+                    name={category.name}
+                    description={category.description}
+                    isPinned={category.isPinned}
+                    recipeCount={category.recipeCategories.length}
+                    recipeImages={category.recipeCategories.map(
+                      (rc) => rc.recipe.imageUrl,
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -16,6 +16,7 @@ import {
   Share2,
   ChefHat,
   MoreHorizontal,
+  Heart,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -238,7 +239,7 @@ export default async function RecipeDetailPage({
         {/* Floating Category Badge */}
         {recipe.category && (
           <div className="absolute top-4 bg-white/95 backdrop-blur-sm px-2 py-2 mx-4 rounded-sm shadow-brand-sm">
-            <span className="text-xs font-medium text-text-primary break-all">
+            <span className="text-xs font-medium text-text-primary wrap-break-word">
               {recipe.category}
             </span>
           </div>
@@ -246,23 +247,23 @@ export default async function RecipeDetailPage({
 
         {/* Floating Favorite */}
         {recipe.isFavorite && (
-          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-2 rounded-sm shadow-brand-sm">
-            <Star className={cn(icon.medium, "fill-brand text-brand")} />
+          <div className="absolute top-4 right-4 bg-brand/10 backdrop-blur-sm p-2 rounded-sm shadow-brand-sm">
+            <Heart className={cn(icon.medium, "fill-brand text-brand")} />
           </div>
         )}
 
         {/* Content Container - Overlapping */}
-        <div className={cn(layout.container, "relative -mt-16")}>
+        <div className={cn(layout.containerSmall, "relative -mt-16")}>
           {/* Recipe Header Card */}
           <Card className="p-6 mb-6 shadow-xs shadow-black/5">
             <div className={spacing.cardLarge}>
               <div>
-                <h1 className="text-3xl font-semibold text-text-primary mb-2 break-all">
+                <h1 className="text-3xl font-semibold text-text-primary mb-2 wrap-break-word">
                   {recipe.title}
                 </h1>
 
                 {recipe.description && (
-                  <p className="text-base text-text-secondary mb-3 leading-relaxed break-all">
+                  <p className="text-base text-text-secondary mb-3 leading-relaxed wrap-break-word">
                     {recipe.description}
                   </p>
                 )}
@@ -271,7 +272,7 @@ export default async function RecipeDetailPage({
                   <p
                     className={cn(
                       text.bodyLarge,
-                      "flex items-center gap-2 text-text-secondary break-all",
+                      "flex items-center gap-2 text-text-secondary wrap-break-word",
                     )}
                   >
                     <span className="w-1 h-1 rounded-full bg-brand" />

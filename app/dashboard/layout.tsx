@@ -1,15 +1,29 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { categories } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await currentUser();
+
+  const userCategories = user
+    ? await db.query.categories.findMany({
+        where: eq(categories.userId, user.id),
+        orderBy: [desc(categories.createdAt)],
+        columns: { id: true, name: true },
+      })
+    : [];
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full overflow-x-hidden">
-        <AppSidebar />
+        <AppSidebar categories={userCategories} />
         <main className="flex-1 min-w-0">
           <div className="border-b">
             <div className="flex h-16 items-center px-6">

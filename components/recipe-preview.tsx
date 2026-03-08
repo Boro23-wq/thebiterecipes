@@ -46,7 +46,6 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
         <div className="space-y-2">
           {recipe.imageUrls && recipe.imageUrls.length > 0 ? (
             <>
-              {/* Main image - larger */}
               <div className="relative h-64 bg-brand-100 rounded-sm overflow-hidden">
                 <Image
                   src={
@@ -60,7 +59,6 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 />
               </div>
 
-              {/* Secondary images - smaller grid */}
               {recipe.imageUrls.length > 1 && (
                 <div
                   className={`grid gap-2 ${recipe.imageUrls.length === 2 ? "grid-cols-1" : "grid-cols-2"}`}
@@ -82,6 +80,16 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </div>
               )}
             </>
+          ) : recipe.imageUrl ? (
+            <div className="relative h-64 bg-brand-100 rounded-sm overflow-hidden">
+              <Image
+                src={recipe.imageUrl}
+                alt={recipe.title}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
           ) : (
             <div className="relative h-64 bg-brand-100 rounded-sm overflow-hidden">
               <div className="w-full h-full flex items-center justify-center">
@@ -101,7 +109,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
 
           {/* Metadata */}
           <div className="grid grid-cols-2 gap-3">
-            {recipe.prepTime && (
+            {!!recipe.prepTime && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -112,7 +120,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.cookTime && (
+            {!!recipe.cookTime && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -123,7 +131,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.servings && (
+            {!!recipe.servings && (
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -134,7 +142,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.calories && (
+            {!!recipe.calories && (
               <div className="flex items-center gap-2 text-sm">
                 <Flame className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -145,7 +153,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.protein && (
+            {!!recipe.protein && (
               <div className="flex items-center gap-2 text-sm">
                 <Activity className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -156,7 +164,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.carbs && (
+            {!!recipe.carbs && (
               <div className="flex items-center gap-2 text-sm">
                 <Wheat className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">
@@ -167,7 +175,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
                 </span>
               </div>
             )}
-            {recipe.fat && (
+            {!!recipe.fat && (
               <div className="flex items-center gap-2 text-sm">
                 <Droplet className="h-4 w-4 text-brand" />
                 <span className="text-text-secondary">

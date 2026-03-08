@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreVertical, Pin, Edit, Trash2, ImageIcon } from "lucide-react";
+import { MoreVertical, Pin, Edit, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
 } from "@/app/dashboard/categories/actions";
 import { useTransition } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { DeleteMenuItem } from "./delete-menu-item";
 
 interface CategoryCardProps {
@@ -37,16 +38,21 @@ export function CategoryCard({
 }: CategoryCardProps) {
   const [isPending, startTransition] = useTransition();
 
-  const handlePin = () => {
-    startTransition(async () => {
-      try {
-        await togglePinCategory(id);
-      } catch (error) {
-        alert(
-          error instanceof Error ? error.message : "Failed to pin category",
-        );
+  const handlePin = async () => {
+    try {
+      const result = await togglePinCategory(id);
+
+      if (!result?.success) {
+        toast.error(result?.error ?? "Failed to pin category");
+        return;
       }
-    });
+
+      toast.success(
+        isPinned ? `Category ${name} unpinned` : `Category ${name} pinned`,
+      );
+    } catch (error) {
+      toast.error("Failed to pin category");
+    }
   };
 
   const handleDelete = () => {
@@ -55,34 +61,88 @@ export function CategoryCard({
     });
   };
 
-  const imageSlots = Array.from(
-    { length: 4 },
-    (_, idx) => recipeImages[idx] || null,
-  );
+  const images = recipeImages.filter((img): img is string => !!img);
+  const count = images.length;
 
   return (
-    <div className="group relative bg-white rounded-sm border border-border-brand-light hover:border-border-brand-subtle transition-all overflow-hidden">
-      <Link href={`/dashboard/categories/${id}`}>
-        {/* Recipe Images Grid - Always 2x2 */}
-        <div className="h-32 grid grid-cols-2 grid-rows-2 gap-0.5 bg-brand-100">
-          {imageSlots.map((img, idx) => (
-            <div
-              key={idx}
-              className="relative bg-brand-200 flex items-center justify-center overflow-hidden"
-            >
-              {img ? (
+    <div className="group relative bg-white rounded-sm border border-border-brand-light hover:border-border-brand-subtle transition-all overflow-hidden h-full flex flex-col">
+      <Link
+        href={`/dashboard/categories/${id}`}
+        className="flex flex-col flex-1"
+      >
+        {/* Dynamic Image Layout */}
+        <div className="relative h-32 bg-brand-100 overflow-hidden">
+          {count === 4 && (
+            <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
+              {images.map((img, i) => (
+                <div key={i} className="relative">
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {count === 3 && (
+            <div className="grid grid-rows-2 h-full gap-0.5">
+              <div className="relative">
                 <Image
-                  src={img}
+                  src={images[0]}
                   alt=""
                   fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
+                  sizes="(max-width: 768px) 100vw, 25vw"
                   className="object-cover"
                 />
-              ) : (
-                <ImageIcon className="h-6 w-6 text-brand/30" />
-              )}
+              </div>
+              <div className="grid grid-cols-2 gap-0.5">
+                <div className="relative">
+                  <Image src={images[1]} alt="" fill className="object-cover" />
+                </div>
+                <div className="relative">
+                  <Image src={images[2]} alt="" fill className="object-cover" />
+                </div>
+              </div>
             </div>
-          ))}
+          )}
+
+          {count === 2 && (
+            <div className="grid grid-rows-2 h-full gap-0.5">
+              {images.map((img, i) => (
+                <div key={i} className="relative">
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {count === 1 && (
+            <div className="relative h-full">
+              <Image
+                src={images[0]}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          {count === 0 && (
+            <div className="flex items-center justify-center h-full bg-brand-200">
+              <ImageIcon className="h-8 w-8 text-brand/30" />
+            </div>
+          )}
 
           {/* Pin badge */}
           {isPinned && (
@@ -96,7 +156,6 @@ export function CategoryCard({
 
         {/* Content */}
         <div className="p-4">
-          {/* Title and Count Badge */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <h3 className="text-base font-semibold text-text-primary line-clamp-1 flex-1">
               {name}
@@ -106,7 +165,6 @@ export function CategoryCard({
             </span>
           </div>
 
-          {/* Description */}
           {description && (
             <p className="text-sm text-text-secondary line-clamp-2">
               {description}
@@ -115,7 +173,7 @@ export function CategoryCard({
         </div>
       </Link>
 
-      {/* Actions Menu - Always visible */}
+      {/* Actions Menu */}
       <div className="absolute top-2 right-2 z-10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -128,6 +186,7 @@ export function CategoryCard({
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             align="end"
             className="w-48 border-none shadow-menu rounded-sm"
@@ -141,14 +200,16 @@ export function CategoryCard({
                 Edit Category
               </Link>
             </DropdownMenuItem>
+
             <DropdownMenuItem
               onClick={handlePin}
               className="cursor-pointer hover:bg-brand-100 hover:text-brand"
               disabled={isPending}
             >
               <Pin className="mr-2 h-4 w-4" />
-              {isPinned ? "Unpin" : "Pin to Dashboard"}
+              {isPinned ? "Unpin Category" : "Pin Category"}
             </DropdownMenuItem>
+
             <DropdownMenuSeparator className="bg-border-light" />
 
             <DeleteMenuItem

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Users, Star, ImageIcon } from "lucide-react";
+import { Clock, Users, Flame, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FavoriteButton } from "./favorite-button";
@@ -21,6 +21,7 @@ interface RecipeCardProps {
   isFavorite?: boolean | null;
   rating?: number | null;
   createdAt?: Date | string;
+  actions?: React.ReactNode;
 }
 
 export function RecipeCard({
@@ -31,126 +32,138 @@ export function RecipeCard({
   cookTime,
   totalTime,
   servings,
-  difficulty,
   cuisine,
   category,
   calories,
   isFavorite,
-  rating,
   createdAt,
+  actions,
 }: RecipeCardProps) {
   const src = recipeImageSrc(imageUrl, { mode: "stored" });
+  const hasImage = !!src;
 
   const displayTime =
     totalTime ||
     (prepTime && cookTime ? prepTime + cookTime : prepTime || cookTime);
 
-  const getTimeAgo = (
-    date: Date | string | undefined,
-  ): { text: string; isRecent: boolean } => {
-    if (!date) return { text: "RECENTLY", isRecent: false };
-
+  const getTimeAgo = (date: Date | string | undefined): string => {
+    if (!date) return "RECENTLY";
     const now = new Date();
     const dateObj = typeof date === "string" ? new Date(date) : date;
-
-    if (isNaN(dateObj.getTime())) return { text: "RECENTLY", isRecent: false };
-
+    if (isNaN(dateObj.getTime())) return "RECENTLY";
     const diffTime = Math.abs(now.getTime() - dateObj.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 1) return { text: "TODAY", isRecent: true };
-    if (diffDays === 1) return { text: "YESTERDAY", isRecent: true };
-    if (diffDays < 30) return { text: `${diffDays} DAYS AGO`, isRecent: false };
-    if (diffDays < 365)
-      return {
-        text: `${Math.floor(diffDays / 30)} MONTHS AGO`,
-        isRecent: false,
-      };
-    return { text: `${Math.floor(diffDays / 365)} YEARS AGO`, isRecent: false };
+    if (diffDays < 1) return "TODAY";
+    if (diffDays === 1) return "YESTERDAY";
+    if (diffDays < 30) return `${diffDays}D AGO`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}MO AGO`;
+    return `${Math.floor(diffDays / 365)}Y AGO`;
   };
 
   return (
     <Link href={`/dashboard/recipes/${id}`}>
-      <div className="overflow-hidden transition-all hover:border-border-brand-subtle cursor-pointer h-full rounded-sm bg-white relative border border-border-brand-light flex flex-col">
-        {/* Badge */}
-        <div className="absolute top-3 left-3 right-2 z-10 flex items-start justify-between">
-          {category && (
-            <span className="truncate whitespace-nowrap bg-white/95 text-text-primary text-xs font-medium px-2 py-1 rounded-sm">
-              {category}
-            </span>
-          )}
-
-          <FavoriteButton recipeId={id} isFavorite={isFavorite} />
-        </div>
-        {/* Image Section - 60% */}
-        <div className="h-52 w-full bg-[#FFF4ED] flex items-center justify-center relative">
-          {src ? (
+      <div className="group relative overflow-hidden rounded-sm border border-border-brand-light hover:border-brand-200 hover:shadow-xs transition-all cursor-pointer h-full">
+        <div className="relative h-56 w-full bg-brand-50 flex items-center justify-center overflow-hidden">
+          {hasImage ? (
             <Image
               src={src}
               alt={title}
               fill
-              className="object-cover"
+              className="object-cover transition-transform group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 33vw"
             />
           ) : (
-            <ImageIcon className="h-12 w-12 text-[#FF6B35]/30" />
+            <ImageIcon className="h-10 w-10 text-brand/20 absolute top-[25%]" />
           )}
-        </div>
 
-        <div className="p-4 space-y-4 bg-[#FFFAF7] flex-1 flex flex-col justify-between">
-          <div className="space-y-1 min-w-0">
-            {/* Title */}
-            <h3 className="text-base font-semibold text-text-primary truncate">
-              {title}
-            </h3>
-
-            {/* Cuisine */}
-            <p className="text-sm text-text-secondary truncate">
-              {cuisine ? cuisine : "Unknown"}
-            </p>
-            {/* )} */}
+          {/* Top overlays */}
+          <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-10">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {category && (
+                <span
+                  className={`backdrop-blur-sm text-[10px] font-semibold px-2 py-0.5 rounded-sm uppercase tracking-wide truncate max-w-[70%] ${
+                    hasImage
+                      ? "bg-black/50 text-white"
+                      : "bg-white/90 text-text-primary"
+                  }`}
+                >
+                  {category}
+                </span>
+              )}
+            </div>
+            <div className="shrink-0 flex items-center">
+              <FavoriteButton recipeId={id} isFavorite={isFavorite} />
+              {actions}
+            </div>
           </div>
 
-          {/* Metrics Row */}
-          <div className="flex items-center gap-3 text-xs text-text-primary">
-            {displayTime && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-text-secondary" />
-                <span>{displayTime} min</span>
+          {/* Gradient — dark for images, light for no-image */}
+          <div
+            className={`absolute inset-x-0 bottom-0 h-[75%] bg-gradient-to-t z-[1] ${
+              hasImage
+                ? "[background:linear-gradient(to_top,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.7)_25%,rgba(0,0,0,0.45)_50%,rgba(0,0,0,0.15)_75%,transparent_100%)]"
+                : "from-white via-white/70 to-transparent"
+            }`}
+          />
+
+          {/* Content overlay */}
+          <div className="absolute inset-x-0 bottom-0 p-3 z-[2]">
+            <div className="space-y-2">
+              <div>
+                <h3
+                  className={`text-sm font-semibold leading-snug line-clamp-2 ${
+                    hasImage ? "text-white" : "text-text-primary"
+                  }`}
+                >
+                  {title}
+                </h3>
+                <p
+                  className={`text-[11px] mt-0.5 truncate ${
+                    hasImage ? "text-white/70" : "text-text-muted"
+                  }`}
+                >
+                  {cuisine || "Unknown cuisine"}
+                </p>
               </div>
-            )}
-            {servings && (
-              <>
-                <span className="text-text-secondary">•</span>
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5 text-text-secondary" />
-                  <span>{servings}</span>
-                </div>
-              </>
-            )}
-            {calories && (
-              <>
-                <span className="text-text-secondary">•</span>
-                <span>{calories} cal</span>
-              </>
-            )}
-          </div>
 
-          {/* Footer - Date and Rating */}
-          <div className="flex items-center justify-between pt-2 border-t border-brand-300">
-            <span
-              className={`text-xs font-bold uppercase tracking-tight ${"text-[#FF6B35]"}`}
-            >
-              {getTimeAgo(createdAt).text}
-            </span>
-            {rating && (
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-[#F7B801] text-[#F7B801]" />
-                <span className="text-xs text-text-primary font-medium">
-                  {rating}/5
+              <div
+                className={`flex items-center justify-between pt-1.5 border-t ${
+                  hasImage ? "border-white/15" : "border-brand-100"
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2.5 text-[10px] ${
+                    hasImage ? "text-white/70" : "text-text-secondary"
+                  }`}
+                >
+                  {!!displayTime && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {displayTime}m
+                    </span>
+                  )}
+                  {!!servings && (
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {servings}
+                    </span>
+                  )}
+                  {!!calories && (
+                    <span className="flex items-center gap-1">
+                      <Flame className="h-3 w-3" />
+                      {calories}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] font-bold tracking-tight ${
+                    hasImage ? "text-brand-300" : "text-brand"
+                  }`}
+                >
+                  {getTimeAgo(createdAt)}
                 </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
