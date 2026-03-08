@@ -6,6 +6,12 @@ import { toggleFavorite } from "@/app/dashboard/recipes/actions";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent,
+} from "./ui/tooltip";
 
 const favoriteOptimisticCache = new Map<string, boolean>();
 
@@ -65,21 +71,29 @@ export function FavoriteButton({
   };
 
   return (
-    <Button
-      onClick={handleToggle}
-      disabled={isPending}
-      variant="brand-light"
-      size="sm"
-      className={cn("cursor-pointer", className)}
-      title={fav ? "Remove from favorites" : "Add to favorites"}
-    >
-      <Heart
-        className={cn(
-          "h-4 w-4 transition-colors",
-          fav ? "fill-current text-brand" : "fill-none text-text-primary",
-          "text-brand",
-        )}
-      />
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={handleToggle}
+            disabled={isPending}
+            variant="brand-light"
+            size="sm"
+            className={cn("cursor-pointer", className)}
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-colors",
+                fav ? "fill-current text-brand" : "fill-none text-text-primary",
+                "text-brand",
+              )}
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{fav ? "Remove from favorites" : "Add to favorites"}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

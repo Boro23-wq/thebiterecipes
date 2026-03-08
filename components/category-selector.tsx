@@ -72,7 +72,7 @@ export function CategorySelector({
 
       <DropdownMenuContent
         align="end"
-        className="w-56 rounded-sm border-none shadow-menu"
+        className="w-56 border border-border-light bg-white shadow-xs"
       >
         <DropdownMenuLabel className="text-sm text-text-primary">
           Categories

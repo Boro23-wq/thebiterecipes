@@ -16,6 +16,7 @@ import {
   Share2,
   ChefHat,
   MoreHorizontal,
+  Heart,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -246,8 +247,8 @@ export default async function RecipeDetailPage({
 
         {/* Floating Favorite */}
         {recipe.isFavorite && (
-          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-2 rounded-sm shadow-brand-sm">
-            <Star className={cn(icon.medium, "fill-brand text-brand")} />
+          <div className="absolute top-4 right-4 bg-brand/10 backdrop-blur-sm p-2 rounded-sm shadow-brand-sm">
+            <Heart className={cn(icon.medium, "fill-brand text-brand")} />
           </div>
         )}
 

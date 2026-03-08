@@ -57,7 +57,7 @@ export default async function CategoryDetailPage({
   const existingRecipeIds = categoryRecipes.map((r) => r.id);
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="space-y-6">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
         <Button variant="text" size="none" asChild className="gap-2">
@@ -90,62 +90,74 @@ export default async function CategoryDetailPage({
       </div>
 
       {/* Hero */}
-      <div className="rounded-sm border border-border-brand-light bg-white overflow-hidden flex">
-        <div className="w-1 shrink-0 bg-brand" />
-
-        <div className="flex-1 px-5 py-4">
-          <div className="flex items-center justify-between">
+      <div className="rounded-sm bg-brand/5 overflow-hidden">
+        <div className="px-5 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Left section */}
             <div className="flex items-center gap-3 min-w-0">
-              <FolderOpen className="h-5 w-5 shrink-0 text-brand" />
-              <h1 className="text-lg font-bold text-text-primary truncate">
-                {category.name}
-              </h1>
+              <div className="flex items-center justify-center h-8 w-8 rounded-sm bg-brand/10 shrink-0">
+                <FolderOpen className="h-4 w-4 text-brand" />
+              </div>
+
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold text-text-primary wrap-break-word">
+                  {category.name}
+                </h1>
+
+                {category.description && (
+                  <p className="text-sm text-text-muted wrap-break-word">
+                    {category.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Right section */}
+            <div className="flex items-center gap-3 pl-11 sm:pl-0">
               {category.isPinned && (
-                <span className="shrink-0 flex items-center gap-1 bg-brand-50 px-2 py-0.5 rounded-sm">
+                <span className="flex items-center gap-1 bg-brand/10 px-2 py-0.5 rounded-sm">
                   <Pin className="h-3 w-3 text-brand fill-brand" />
                   <span className="text-[10px] font-medium text-brand">
                     Pinned
                   </span>
                 </span>
               )}
-            </div>
 
-            <div className="shrink-0 ml-4 flex items-center gap-1.5 text-sm">
-              <span className="font-bold text-brand">
-                {categoryRecipes.length}
-              </span>
-              <span className="text-text-muted">
-                {categoryRecipes.length === 1 ? "recipe" : "recipes"}
-              </span>
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="font-bold text-brand">
+                  {categoryRecipes.length}
+                </span>
+                <span className="text-text-muted">
+                  {categoryRecipes.length === 1 ? "recipe" : "recipes"}
+                </span>
+              </div>
             </div>
           </div>
-
-          {category.description && (
-            <p className="text-sm text-text-muted mt-1 pl-8 truncate">
-              {category.description}
-            </p>
-          )}
         </div>
       </div>
 
       {/* Content header */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">Recipes</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            {categoryRecipes.length === 0
-              ? "Nothing here yet — add some recipes."
-              : "All recipes assigned to this category."}
-          </p>
-        </div>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Recipes</h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {categoryRecipes.length === 0
+                ? "Nothing here yet — add some recipes."
+                : "All recipes assigned to this category."}
+            </p>
+          </div>
 
-        <AddRecipeToCategoryButton
-          categoryId={category.id}
-          categoryName={category.name}
-          categoryDescription={category.description ?? undefined}
-          recipes={userRecipes}
-          existingRecipeIds={existingRecipeIds}
-        />
+          <div className="sm:shrink-0">
+            <AddRecipeToCategoryButton
+              categoryId={category.id}
+              categoryName={category.name}
+              categoryDescription={category.description ?? undefined}
+              recipes={userRecipes}
+              existingRecipeIds={existingRecipeIds}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Recipes */}

@@ -15,7 +15,7 @@ import {
 } from "@/components/recipe-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { searchRecipes } from "@/app/dashboard/recipes/actions";
+import { searchRecipes, toggleFavorite } from "@/app/dashboard/recipes/actions";
 import ViewSwitcher from "@/components/view-switcher";
 import {
   Plus,
@@ -30,6 +30,7 @@ import {
   X,
   LinkIcon,
   Flame,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -53,6 +54,12 @@ import Image from "next/image";
 
 import type { RecipesCursor } from "@/app/dashboard/recipes/actions";
 import { layout } from "@/lib/design-tokens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 type ViewMode = "grid" | "compact";
 type SortBy = "recent" | "title" | "rating" | "time";
@@ -195,7 +202,6 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
     selectedDifficulties,
     selectedCategories,
     showFavoritesOnly,
-    RECIPES_PER_PAGE,
   ]);
 
   useEffect(() => {
@@ -626,39 +632,37 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                   <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
                     {group}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                    {groupRecipes.map((recipe) => (
-                      <Link
-                        key={recipe.id}
-                        href={`/dashboard/recipes/${recipe.id}`}
-                        className="group flex items-center gap-3 bg-white rounded-sm p-3 hover:border-brand-200 hover:shadow-xs transition-all border border-border-brand-light cursor-pointer"
-                      >
-                        <div className="w-16 h-16 bg-brand-50 rounded-sm shrink-0 flex items-center justify-center overflow-hidden relative">
-                          {recipe.imageUrl ? (
-                            <Image
-                              src={recipe.imageUrl}
-                              alt={recipe.title}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <ImageIcon className="h-5 w-5 text-brand/20" />
-                          )}
-                          {!!recipe.totalTime && (
-                            <div className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 bg-black/50 backdrop-blur-sm text-white text-[9px] font-medium px-1 py-0.5 rounded-sm">
-                              <Clock className="h-2 w-2" />
-                              {recipe.totalTime}m
-                            </div>
-                          )}
-                        </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                    {groupRecipes.map((recipe) => {
+                      const isFav = recipe.isFavorite ?? false;
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <h3 className="text-sm font-semibold text-text-primary truncate transition-colors">
+                      return (
+                        <div key={recipe.id} className="relative">
+                          <Link
+                            href={`/dashboard/recipes/${recipe.id}`}
+                            className="flex items-center gap-3 rounded-sm p-2.5 bg-white border border-border-brand-light hover:border-brand-400 transition-colors"
+                          >
+                            {/* Thumbnail */}
+                            <div className="w-14 h-14 rounded-sm shrink-0 overflow-hidden bg-brand/5 flex items-center justify-center">
+                              {recipe.imageUrl ? (
+                                <Image
+                                  src={recipe.imageUrl}
+                                  alt={recipe.title}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="h-5 w-5 text-brand/20" />
+                              )}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold text-text-primary truncate pr-14">
                                 {recipe.title}
                               </h3>
+
                               <div className="flex items-center gap-2 mt-0.5">
                                 {recipe.category && (
                                   <span className="text-[10px] font-medium text-text-secondary bg-brand-50 px-1.5 py-0.5 rounded-sm">
@@ -671,39 +675,80 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                                   </span>
                                 )}
                               </div>
-                            </div>
 
-                            {recipe.isFavorite && (
-                              <Star className="h-3.5 w-3.5 fill-brand text-brand shrink-0" />
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between mt-1.5">
-                            <div className="flex items-center gap-3 text-[10px] text-text-muted">
-                              {!!recipe.servings && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {recipe.servings} servings
-                                </span>
-                              )}
-                              {!!recipe.calories && (
-                                <span className="flex items-center gap-1">
-                                  <Flame className="h-3 w-3" />
-                                  {recipe.calories} cal
-                                </span>
-                              )}
+                              <div className="flex items-center gap-3 mt-1 text-xs text-text-muted">
+                                {!!recipe.totalTime && recipe.totalTime > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {recipe.totalTime}m
+                                  </span>
+                                )}
+                                {!!recipe.servings && (
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {recipe.servings}
+                                  </span>
+                                )}
+                                {!!recipe.calories && (
+                                  <span className="flex items-center gap-1">
+                                    <Flame className="h-3 w-3" />
+                                    {recipe.calories}
+                                  </span>
+                                )}
+                              </div>
                             </div>
+                          </Link>
+
+                          {/* Actions — always visible */}
+                          <div className="absolute top-2 right-2 flex items-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="text"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      toggleFavorite(recipe.id);
+                                      setRecipes((prev) =>
+                                        prev.map((r) =>
+                                          r.id === recipe.id
+                                            ? {
+                                                ...r,
+                                                isFavorite: !r.isFavorite,
+                                              }
+                                            : r,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-7 w-7 cursor-pointer"
+                                  >
+                                    <Heart
+                                      className={cn(
+                                        "h-3.5 w-3.5",
+                                        isFav
+                                          ? "text-brand fill-brand"
+                                          : "text-brand",
+                                      )}
+                                    />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{isFav ? "Unfavorite" : "Favorite"}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
 
-              {/* Compact skeletons while loading */}
               {isPending && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-6">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <CompactRecipeSkeleton key={i} />
                   ))}

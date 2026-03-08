@@ -69,6 +69,7 @@ export default function AddRecipeToCategoryButton({
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
@@ -213,7 +214,7 @@ export default function AddRecipeToCategoryButton({
     <>
       <Button
         variant="brand"
-        className="cursor-pointer"
+        className="cursor-pointer w-full sm:w-auto"
         onClick={() => setOpen(true)}
       >
         <Plus className="h-4 w-4" />

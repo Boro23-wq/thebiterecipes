@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { Plus, FolderOpen } from "lucide-react";
+import { Plus, FolderOpen, Pin } from "lucide-react";
 import { text } from "@/lib/design-tokens";
 import Link from "next/link";
 import { CategoryCard } from "@/components/category-card";
@@ -84,12 +84,13 @@ export default async function CategoriesPage() {
           {pinnedCategories.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div>
-                  <h2 className={text.h3}>Pinned Categories</h2>
-                  <p className={cn(text.muted, "mt-0.5")}>
-                    Quick access to your favorite collections
-                  </p>
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm ">
+                  <Pin className="h-4 w-4 text-brand " />
                 </div>
+                <span className="text-sm font-semibold text-brand">Pinned</span>
+                <span className="text-xs text-text-muted">
+                  ({pinnedCategories.length})
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -115,8 +116,14 @@ export default async function CategoriesPage() {
           {otherCategories.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center h-6 w-6 rounded-sm bg-text-muted/10">
+                  <FolderOpen className="h-4 w-4 text-text-muted" />
+                </div>
                 <span className="text-sm font-semibold text-text-primary">
                   All Categories
+                </span>
+                <span className="text-xs text-text-muted">
+                  ({otherCategories.length})
                 </span>
               </div>
 

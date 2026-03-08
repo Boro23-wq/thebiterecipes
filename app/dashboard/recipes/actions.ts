@@ -13,6 +13,11 @@ import { desc, asc, sql, and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { parseIngredient } from "@/lib/parse-ingredient";
 
+export type FilteredRecipesCursor =
+  | { createdAt: string; id: string }
+  | { title: string; id: string }
+  | { timeKey: number; id: string };
+
 async function assertOwnsRecipeOrThrow(userId: string, recipeId: string) {
   const recipe = await db.query.recipes.findFirst({
     where: and(eq(recipes.id, recipeId), eq(recipes.userId, userId)),
@@ -520,15 +525,23 @@ export async function toggleFavorite(recipeId: string) {
 export async function fetchFilteredRecipes(input: {
   categoryId?: string;
   favoritesOnly?: boolean;
-  cursor?: { createdAt: string; id: string } | null;
+  q?: string;
+  sortBy?: RecipeSortBy;
+  cursor?: FilteredRecipesCursor | null;
   limit?: number;
-}) {
+}): Promise<{
+  items: (typeof recipes.$inferSelect)[];
+  nextCursor: FilteredRecipesCursor | null;
+  totalCount: number;
+}> {
   const user = await currentUser();
   if (!user) throw new Error("Unauthorized");
 
   const {
     categoryId,
     favoritesOnly = false,
+    q = "",
+    sortBy = "recent",
     cursor = null,
     limit = 24,
   } = input;
@@ -559,48 +572,94 @@ export async function fetchFilteredRecipes(input: {
     conditions.push(eq(recipes.isFavorite, true));
   }
 
-  if (cursor) {
+  // 🔎 Search
+  const trimmed = q.trim();
+  if (trimmed) {
+    const term = `%${trimmed}%`;
     conditions.push(
       sql`(
-        ${recipes.createdAt} < ${cursor.createdAt} OR
-        (${recipes.createdAt} = ${cursor.createdAt} AND ${recipes.id} < ${cursor.id})
+        ${recipes.title} ILIKE ${term} OR
+        ${recipes.cuisine} ILIKE ${term} OR
+        ${recipes.category} ILIKE ${term}
       )`,
     );
   }
 
+  // Sort expressions
+  const timeKeyExpr = sql<number>`COALESCE(${recipes.totalTime}, 999999)`;
+
+  // Cursor pagination
+  if (cursor) {
+    if ("title" in cursor) {
+      conditions.push(
+        sql`(
+          ${recipes.title} > ${cursor.title} OR
+          (${recipes.title} = ${cursor.title} AND ${recipes.id} > ${cursor.id})
+        )`,
+      );
+    } else if ("timeKey" in cursor) {
+      conditions.push(
+        sql`(
+          ${timeKeyExpr} > ${cursor.timeKey} OR
+          (${timeKeyExpr} = ${cursor.timeKey} AND ${recipes.id} > ${cursor.id})
+        )`,
+      );
+    } else {
+      conditions.push(
+        sql`(
+          ${recipes.createdAt} < ${cursor.createdAt} OR
+          (${recipes.createdAt} = ${cursor.createdAt} AND ${recipes.id} < ${cursor.id})
+        )`,
+      );
+    }
+  }
+
   const whereClause = and(...conditions);
+
+  // Order by
+  const orderByClause =
+    sortBy === "title"
+      ? [asc(recipes.title), asc(recipes.id)]
+      : sortBy === "time"
+        ? [asc(timeKeyExpr), asc(recipes.id)]
+        : [desc(recipes.createdAt), desc(recipes.id)];
 
   const rows = await db.query.recipes.findMany({
     where: whereClause,
-    orderBy: () => [desc(recipes.createdAt), desc(recipes.id)],
+    orderBy: () => orderByClause,
     limit: limit + 1,
   });
 
   const hasNext = rows.length > limit;
   const items = hasNext ? rows.slice(0, limit) : rows;
 
-  let nextCursor: { createdAt: string; id: string } | null = null;
+  // Build typed cursor
+  let nextCursor: FilteredRecipesCursor | null = null;
   if (hasNext) {
     const last = items[items.length - 1]!;
-    nextCursor = {
-      createdAt:
-        typeof last.createdAt === "string"
-          ? last.createdAt
-          : last.createdAt.toISOString(),
-      id: last.id,
-    };
+    if (sortBy === "title") {
+      nextCursor = { title: last.title, id: last.id };
+    } else if (sortBy === "time") {
+      nextCursor = { timeKey: last.totalTime ?? 999999, id: last.id };
+    } else {
+      nextCursor = {
+        createdAt:
+          typeof last.createdAt === "string"
+            ? last.createdAt
+            : last.createdAt.toISOString(),
+        id: last.id,
+      };
+    }
   }
 
+  // Total count (without cursor condition)
+  const countConditions = conditions.filter(
+    (_, i) => i < conditions.length - (cursor ? 1 : 0),
+  );
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(recipes)
-    .where(
-      and(
-        ...conditions.filter(
-          (_, i) => i < conditions.length - (cursor ? 1 : 0),
-        ),
-      ),
-    );
+    .where(and(...countConditions));
 
   return {
     items,

@@ -92,7 +92,7 @@ export function RecipeCard({
             </div>
 
             {/* RIGHT SIDE - ALWAYS RIGHT */}
-            <div className="shrink-0 flex items-center gap-1">
+            <div className="shrink-0 flex items-center">
               <FavoriteButton recipeId={id} isFavorite={isFavorite} />
               {actions}
             </div>
