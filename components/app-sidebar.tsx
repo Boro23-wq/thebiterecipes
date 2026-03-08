@@ -119,7 +119,7 @@ export function AppSidebar({ categories }: AppSidebarProps) {
 
   return (
     <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="border-b border-gray-200 px-6 py-4">
+      <SidebarHeader className="border-b border-gray-200 px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[#FF6B35] text-white font-bold">
             B

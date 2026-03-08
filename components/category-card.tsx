@@ -65,8 +65,11 @@ export function CategoryCard({
   const count = images.length;
 
   return (
-    <div className="group relative bg-white rounded-sm border border-border-brand-light hover:border-border-brand-subtle transition-all overflow-hidden">
-      <Link href={`/dashboard/categories/${id}`}>
+    <div className="group relative bg-white rounded-sm border border-border-brand-light hover:border-border-brand-subtle transition-all overflow-hidden h-full flex flex-col">
+      <Link
+        href={`/dashboard/categories/${id}`}
+        className="flex flex-col flex-1"
+      >
         {/* Dynamic Image Layout */}
         <div className="relative h-32 bg-brand-100 overflow-hidden">
           {count === 4 && (

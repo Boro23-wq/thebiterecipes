@@ -22,12 +22,14 @@ import {
   Sparkles,
   ClipboardPaste,
   Camera,
-  ChevronDown,
   Info,
   X,
+  Wand2,
 } from "lucide-react";
 import { RecipePreview } from "./recipe-preview";
 import { detectPlatform, type PlatformInfo } from "@/lib/platform-detector";
+import { toast } from "sonner";
+import Image from "next/image";
 
 interface ParsedRecipe {
   title: string;
@@ -52,13 +54,19 @@ const PLATFORM_LABELS: Record<string, string> = {
   recipe_site: "🍳 Recipe Site",
 };
 
+type ImportMode = "url" | "screenshot" | "text";
+
 export function ImportRecipeForm() {
   const searchParams = useSearchParams();
 
   const [url, setUrl] = useState(searchParams.get("url") || "");
   const [manualText, setManualText] = useState(searchParams.get("text") || "");
-  const [manualOpen, setManualOpen] = useState(
-    !!searchParams.get("text") || !!searchParams.get("hasImages"),
+  const [mode, setMode] = useState<ImportMode>(
+    searchParams.get("text")
+      ? "text"
+      : searchParams.get("hasImages")
+        ? "screenshot"
+        : "url",
   );
   const [parsedRecipe, setParsedRecipe] = useState<ParsedRecipe | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +74,6 @@ export function ImportRecipeForm() {
   const [isImporting, startImportingTransition] = useTransition();
   const [screenshots, setScreenshots] = useState<File[]>([]);
 
-  // Detect platform as user types
   const platformInfo: PlatformInfo | null = useMemo(() => {
     if (!url.trim()) return null;
     try {
@@ -82,7 +89,6 @@ export function ImportRecipeForm() {
       setError("Please enter a URL");
       return;
     }
-
     setError(null);
     setParsedRecipe(null);
 
@@ -92,21 +98,18 @@ export function ImportRecipeForm() {
           setError("Please enter a valid URL");
           return;
         }
-
-        // Instagram/Pinterest — don't even try
         if (
           platformInfo.platform === "instagram" ||
           platformInfo.platform === "pinterest"
         ) {
           setError(
-            `${PLATFORM_LABELS[platformInfo.platform]} doesn't support direct extraction. Use the screenshot or paste options below.`,
+            `${PLATFORM_LABELS[platformInfo.platform]} doesn't support direct extraction. Use screenshot or paste instead.`,
           );
-          setManualOpen(true);
+          setMode("screenshot");
           return;
         }
 
         let recipe: ParsedRecipe | null = null;
-
         if (platformInfo.platform === "recipe_site") {
           recipe = await parseRecipeUrl(url);
         } else if (platformInfo.supportsAI) {
@@ -116,23 +119,18 @@ export function ImportRecipeForm() {
         if (!recipe) {
           if (platformInfo.supportsAI) {
             setError(
-              "This video doesn't have captions and the description doesn't contain a recipe. Use the screenshot or paste options below.",
+              "Couldn't extract from this video. Try screenshot or paste instead.",
             );
-            setManualOpen(true);
+            setMode("screenshot");
           } else {
-            setError(
-              "Could not extract recipe from this URL. The site might not support automatic import.",
-            );
+            setError("Could not extract recipe from this URL.");
           }
           return;
         }
-
         setParsedRecipe(recipe);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to fetch recipe. Please check the URL and try again.",
+          err instanceof Error ? err.message : "Failed to fetch recipe.",
         );
       }
     });
@@ -143,27 +141,22 @@ export function ImportRecipeForm() {
       setError("Please paste some recipe text");
       return;
     }
-
     setError(null);
     setParsedRecipe(null);
 
     startParsingTransition(async () => {
       try {
         const recipe = await parseManualText(manualText, url || undefined);
-
         if (!recipe) {
           setError(
-            "Couldn't find a recipe in that text. Try pasting the full caption with ingredients and steps.",
+            "Couldn't find a recipe in that text. Try the full caption.",
           );
           return;
         }
-
         setParsedRecipe(recipe);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to parse recipe text. Please try again.",
+          err instanceof Error ? err.message : "Failed to parse recipe text.",
         );
       }
     });
@@ -171,7 +164,6 @@ export function ImportRecipeForm() {
 
   const handleScreenshotParse = () => {
     if (screenshots.length === 0) return;
-
     setError(null);
     setParsedRecipe(null);
 
@@ -197,20 +189,14 @@ export function ImportRecipeForm() {
         );
 
         const recipe = await parseScreenshots(images, url || undefined);
-
         if (!recipe) {
-          setError(
-            "Couldn't find a recipe in those screenshots. Try uploading clearer images that show the full recipe.",
-          );
+          setError("Couldn't find a recipe in those screenshots.");
           return;
         }
-
         setParsedRecipe(recipe);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to parse screenshots. Please try again.",
+          err instanceof Error ? err.message : "Failed to parse screenshots.",
         );
       }
     });
@@ -218,7 +204,6 @@ export function ImportRecipeForm() {
 
   const handleImport = () => {
     if (!parsedRecipe) return;
-
     startImportingTransition(async () => {
       await importRecipe(parsedRecipe);
     });
@@ -230,205 +215,234 @@ export function ImportRecipeForm() {
     setError(null);
     setManualText("");
     setScreenshots([]);
-    setManualOpen(false);
+    setMode("url");
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = 5 - screenshots.length;
+
+    if (files.length > remaining) {
+      toast.error(
+        `You can only upload up to 5 screenshots. ${remaining === 0 ? "Limit reached." : `${remaining} more allowed.`}`,
+      );
+    }
+
+    const allowed = files.slice(0, remaining);
+    if (allowed.length > 0) {
+      setScreenshots((prev) => [...prev, ...allowed]);
+    }
+    e.target.value = "";
+  };
+
+  const modes: { key: ImportMode; label: string; icon: React.ReactNode }[] = [
+    { key: "url", label: "URL", icon: <LinkIcon className="h-3.5 w-3.5" /> },
+    {
+      key: "screenshot",
+      label: "Screenshot",
+      icon: <Camera className="h-3.5 w-3.5" />,
+    },
+    {
+      key: "text",
+      label: "Paste Text",
+      icon: <ClipboardPaste className="h-3.5 w-3.5" />,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* URL Input */}
-      <div className="bg-white rounded-sm border border-border-light p-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="url" className="text-sm font-medium">
-              Recipe URL
-            </Label>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <div className="relative flex-1">
-                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                <Input
-                  id="url"
-                  type="url"
-                  placeholder="Paste a recipe URL, YouTube video, TikTok, etc."
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleParse()}
-                  className="pl-10 border-border-light focus:border-brand focus:ring-brand"
-                  disabled={isParsing || isImporting}
-                />
-              </div>
-              <Button
-                onClick={handleParse}
-                disabled={isParsing || isImporting || !url.trim()}
-                variant="brand"
-                className="cursor-pointer w-full sm:w-auto sm:shrink-0"
-              >
-                {isParsing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {platformInfo?.supportsAI
-                      ? "Extracting with AI..."
-                      : "Parsing..."}
-                  </>
-                ) : (
-                  "Extract Recipe"
-                )}
-              </Button>
+    <div className="space-y-0">
+      {/* Unified card */}
+      <div className="rounded-sm bg-white shadow-brand-sm overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pb-0">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-sm bg-brand-100 p-2 text-brand">
+              <Wand2 className="h-5 w-5" />
             </div>
+            <div>
+              <div className="text-sm font-semibold text-text-primary">
+                Import Recipe
+              </div>
+              <div className="text-xs text-text-secondary">
+                Paste a URL, upload screenshots, or paste recipe text
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* Platform indicator */}
-            {platformInfo && url.trim() && !parsedRecipe && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-text-secondary">
-                  {PLATFORM_LABELS[platformInfo.platform] || "Website"} detected
-                </span>
-                {platformInfo.supportsAI && (
-                  <span className="inline-flex items-center gap-1 rounded-sm bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand">
-                    <Sparkles className="h-3 w-3" />
-                    AI-powered
-                  </span>
-                )}
-                {(platformInfo.platform === "instagram" ||
-                  platformInfo.platform === "pinterest") && (
-                  <span className="inline-flex items-center gap-1 rounded-sm bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-medium text-amber-700">
-                    <Info className="h-3 w-3" />
-                    Use screenshot or paste below
-                  </span>
+        {/* Mode tabs */}
+        <div className="flex px-6 border-b border-border-light">
+          {modes.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => {
+                setMode(key);
+                setError(null);
+              }}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer -mb-px ${
+                mode === key
+                  ? "text-brand border-b-2 border-brand"
+                  : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-6 pt-4!">
+          {/* URL mode */}
+          {mode === "url" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-sm font-medium">
+                  Recipe URL
+                </Label>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="relative flex-1">
+                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                    <Input
+                      id="url"
+                      type="url"
+                      placeholder="Paste a recipe URL, YouTube video, TikTok, etc."
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleParse()}
+                      className="pl-10 border-border-light focus:border-brand focus:ring-brand"
+                      disabled={isParsing || isImporting}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleParse}
+                    disabled={isParsing || isImporting || !url.trim()}
+                    variant="brand"
+                    className="cursor-pointer w-full sm:w-auto sm:shrink-0"
+                  >
+                    {isParsing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {platformInfo?.supportsAI
+                          ? "Extracting with AI..."
+                          : "Parsing..."}
+                      </>
+                    ) : (
+                      "Extract Recipe"
+                    )}
+                  </Button>
+                </div>
+
+                {platformInfo && url.trim() && !parsedRecipe && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary">
+                      {PLATFORM_LABELS[platformInfo.platform] || "Website"}{" "}
+                      detected
+                    </span>
+                    {platformInfo.supportsAI && (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand">
+                        <Sparkles className="h-3 w-3" />
+                        AI-powered
+                      </span>
+                    )}
+                    {(platformInfo.platform === "instagram" ||
+                      platformInfo.platform === "pinterest") && (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        <Info className="h-3 w-3" />
+                        Use screenshot or paste
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm text-sm">
-              {error}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Always-visible manual import section */}
-      <div className="bg-white rounded-sm border border-border-light overflow-hidden">
-        <button
-          onClick={() => setManualOpen(!manualOpen)}
-          className="w-full px-6 py-4 flex items-center justify-between hover:bg-brand-50/50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <Camera className="h-4 w-4 text-brand" />
-              <span className="text-sm font-semibold text-text-primary">
-                Import from screenshot or text
-              </span>
-            </div>
-            <span className="text-xs text-text-muted hidden sm:inline">
-              For Instagram, Pinterest, or any source
-            </span>
-          </div>
-          <ChevronDown
-            className={`h-4 w-4 text-text-muted transition-transform ${
-              manualOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        {manualOpen && (
-          <div className="px-6 pb-6 space-y-6 border-t border-border-light pt-4">
-            {/* Screenshot upload */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-brand" />
-                <span className="text-sm font-medium text-text-primary">
-                  Upload screenshots
-                </span>
-              </div>
+          {/* Screenshot mode */}
+          {mode === "screenshot" && (
+            <div className="space-y-4">
               <p className="text-xs text-text-secondary">
-                Take a screenshot of the recipe post and upload it. Bite will
-                use AI to read the text from the image. You can upload multiple
-                screenshots if the recipe is split across images.
+                Upload up to 5 screenshots of a recipe. Bite uses AI to extract
+                ingredients and instructions from the images.
               </p>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {screenshots.map((file, i) => (
                   <div
                     key={i}
-                    className="relative group h-20 w-20 rounded-sm border border-border-light overflow-hidden"
+                    className="relative group h-24 w-24 rounded-sm overflow-hidden bg-brand-50 shadow-xs"
                   >
-                    <img
+                    <Image
                       src={URL.createObjectURL(file)}
                       alt={`Screenshot ${i + 1}`}
                       className="h-full w-full object-cover"
+                      layout="fill"
+                      objectFit="cover"
                     />
-                    <button
+                    <Button
                       onClick={() =>
                         setScreenshots((prev) => prev.filter((_, j) => j !== i))
                       }
-                      className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      variant="destructive-light"
+                      size="icon-xs"
+                      className="absolute top-1 right-1 h-4.5 w-4.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove"
                     >
                       <X className="h-3 w-3 text-white" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
 
                 {screenshots.length < 5 && (
-                  <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-sm border-2 border-dashed border-border-light hover:border-brand hover:bg-brand-50 transition-colors">
-                    <Camera className="h-5 w-5 text-text-muted" />
+                  <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-brand-200 hover:border-brand hover:bg-brand-50 transition-colors">
+                    <Camera className="h-5 w-5 text-brand/40" />
+                    <span className="text-[10px] text-text-muted">Add</span>
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       className="hidden"
                       disabled={isParsing}
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setScreenshots((prev) =>
-                          [...prev, ...files].slice(0, 5),
-                        );
-                        e.target.value = "";
-                      }}
+                      onChange={handleFileUpload}
                     />
                   </label>
                 )}
               </div>
 
               {screenshots.length > 0 && (
-                <Button
-                  onClick={handleScreenshotParse}
-                  disabled={isParsing}
-                  variant="brand"
-                  className="cursor-pointer"
-                >
-                  {isParsing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Reading screenshots...
-                    </>
-                  ) : (
-                    <>Extract from Screenshots</>
-                  )}
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleScreenshotParse}
+                    disabled={isParsing}
+                    variant="brand"
+                    className="cursor-pointer"
+                  >
+                    {isParsing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Reading screenshots...
+                      </>
+                    ) : (
+                      <>Extract from Screenshots</>
+                    )}
+                  </Button>
+                  <button
+                    onClick={() => setScreenshots([])}
+                    disabled={isParsing}
+                    className="text-xs text-text-muted hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    Clear all
+                  </button>
+                </div>
               )}
             </div>
+          )}
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-light" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-2 text-text-muted">or</span>
-              </div>
-            </div>
-
-            {/* Manual text paste */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ClipboardPaste className="h-4 w-4 text-brand" />
-                <span className="text-sm font-medium text-text-primary">
-                  Paste recipe text
-                </span>
-              </div>
+          {/* Text mode */}
+          {mode === "text" && (
+            <div className="space-y-4">
               <p className="text-xs text-text-secondary">
-                Copy the recipe from the post caption, comments, or description
-                and paste it below.
+                Copy the recipe from a caption, comment, or description and
+                paste it below.
               </p>
 
               <Textarea
@@ -458,8 +472,15 @@ export function ImportRecipeForm() {
                 )}
               </Button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-sm text-sm">
+              {error}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Preview */}
@@ -498,7 +519,7 @@ export function ImportRecipeForm() {
               size="lg"
               className="cursor-pointer"
             >
-              Try Another URL
+              Try Another
             </Button>
           </div>
         </div>

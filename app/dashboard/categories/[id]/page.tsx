@@ -139,7 +139,7 @@ export default async function CategoryDetailPage({
       {/* Content header */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
+          <div className="text-left">
             <h2 className="text-lg font-semibold text-text-primary">Recipes</h2>
             <p className="mt-1 text-sm text-text-secondary">
               {categoryRecipes.length === 0
