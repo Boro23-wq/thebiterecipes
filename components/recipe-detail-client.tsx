@@ -59,7 +59,7 @@ export function RecipeDetailClient({
     <>
       {/* Recipe Overview Section */}
       <section className="mb-8">
-        <div className="bg-white shadow-xs rounded-md p-6">
+        <div className="bg-white shadow-sm shadow-black/10 rounded-md p-6">
           <h3 className={cn(text.h2, "flex items-center gap-2 mb-6")}>
             <span className="w-1 h-6 bg-brand" />
             Nutrition & Details
@@ -199,7 +199,7 @@ export function RecipeDetailClient({
 
         {/* Ingredients Tab */}
         <TabsContent value="ingredients" className="mt-6">
-          <CardSm className="border border-border-brand-light p-6">
+          <CardSm className="shadow-sm shadow-black/10 p-6">
             {ingredients.length > 0 ? (
               <IngredientsList
                 ingredients={ingredients}

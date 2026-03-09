@@ -30,6 +30,7 @@ import { DeleteRecipeButton } from "@/components/delete-recipe-button";
 import { text, icon, badge, spacing, layout } from "@/lib/design-tokens";
 import { categories, recipeCategories } from "@/db/schema";
 import { cn } from "@/lib/utils";
+import { recipeImageSrc } from "@/lib/recipe-image";
 import { SourceBadge } from "@/components/source-badge";
 import { RecipeDetailClient } from "@/components/recipe-detail-client";
 
@@ -82,8 +83,18 @@ export default async function RecipeDetailPage({
     isSelected: cat.recipeCategories.length > 0,
   }));
 
+  // Normalize images so seeded recipes and uploaded images both work
+  const heroImages: string[] =
+    recipe.images && recipe.images.length > 0
+      ? (recipe.images
+          .map((img) => recipeImageSrc(img.imageUrl))
+          .filter(Boolean) as string[])
+      : recipe.imageUrl
+        ? ([recipeImageSrc(recipe.imageUrl)].filter(Boolean) as string[])
+        : [];
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-linear-to-b from-white to-brand-50">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Header Bar */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto py-3 mb-2 flex items-center justify-between">
@@ -141,34 +152,37 @@ export default async function RecipeDetailPage({
 
       {/* Hero Section with Images */}
       <div className="relative pb-8">
-        {recipe.images && recipe.images.length > 0 ? (
+        {heroImages.length > 0 ? (
           <>
-            {/* 1 image - full width */}
-            {recipe.images.length === 1 && (
-              <div className="h-125 bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center relative group cursor-pointer overflow-hidden">
+            {/* 1 image */}
+            {heroImages.length === 1 && (
+              <div className="h-125 relative overflow-hidden group cursor-pointer">
                 <Image
-                  src={recipe.images[0].imageUrl}
+                  src={heroImages[0]}
                   alt={recipe.title}
                   fill
-                  className="object-cover transition-transform group-hover:scale-105"
+                  priority
+                  sizes="100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent" />
               </div>
             )}
 
-            {/* 2 images - split */}
-            {recipe.images.length === 2 && (
+            {/* 2 images */}
+            {heroImages.length === 2 && (
               <div className="grid grid-cols-2 gap-1 h-125">
-                {recipe.images.map((img, idx) => (
+                {heroImages.map((src, idx) => (
                   <div
-                    key={img.id}
-                    className="bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center relative group cursor-pointer overflow-hidden"
+                    key={idx}
+                    className="relative overflow-hidden group cursor-pointer"
                   >
                     <Image
-                      src={img.imageUrl}
-                      alt={`${recipe.title} - Image ${idx + 1}`}
+                      src={src}
+                      alt={`${recipe.title} image ${idx + 1}`}
                       fill
-                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -176,31 +190,33 @@ export default async function RecipeDetailPage({
               </div>
             )}
 
-            {/* 3+ images - main + grid */}
-            {recipe.images.length >= 3 && (
+            {/* 3+ images */}
+            {heroImages.length >= 3 && (
               <div className="grid grid-cols-3 gap-1 h-125">
                 {/* Main large image */}
-                <div className="col-span-2 row-span-2 bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center relative group cursor-pointer overflow-hidden">
+                <div className="col-span-2 row-span-2 relative overflow-hidden group cursor-pointer">
                   <Image
-                    src={recipe.images[0].imageUrl}
+                    src={heroImages[0]}
                     alt={recipe.title}
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    sizes="66vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
 
                 {/* Secondary images */}
-                {recipe.images.slice(1, 3).map((img, idx) => (
+                {heroImages.slice(1, 3).map((src, idx) => (
                   <div
-                    key={img.id}
-                    className="col-span-1 bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center relative group cursor-pointer overflow-hidden"
+                    key={idx}
+                    className="relative overflow-hidden group cursor-pointer"
                   >
                     <Image
-                      src={img.imageUrl}
-                      alt={`${recipe.title} - Image ${idx + 2}`}
+                      src={src}
+                      alt={`${recipe.title} image ${idx + 2}`}
                       fill
-                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -210,28 +226,10 @@ export default async function RecipeDetailPage({
           </>
         ) : (
           // No images fallback
-          <div className="grid grid-cols-3 gap-1 h-125">
-            <div className="col-span-2 row-span-2 bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center relative group cursor-pointer overflow-hidden">
-              <div className="flex flex-col items-center gap-3">
-                <ChefHat className={cn(icon.xlarge, "text-brand/20")} />
-                <span className="text-sm text-brand/40">No image yet</span>
-              </div>
-            </div>
-            <div className="col-span-1 bg-brand-200 flex items-center justify-center group cursor-pointer hover:bg-brand-300 transition-colors">
-              <ImagePlus
-                className={cn(
-                  icon.large,
-                  "text-brand/30 group-hover:text-brand/50 transition-colors",
-                )}
-              />
-            </div>
-            <div className="col-span-1 bg-brand-200 flex items-center justify-center group cursor-pointer hover:bg-brand-300 transition-colors">
-              <ImagePlus
-                className={cn(
-                  icon.large,
-                  "text-brand/30 group-hover:text-brand/50 transition-colors",
-                )}
-              />
+          <div className="h-125 flex items-center justify-center bg-linear-to-br from-brand-200 to-brand-300">
+            <div className="flex flex-col items-center gap-3">
+              <ChefHat className={cn(icon.xlarge, "text-brand/20")} />
+              <span className="text-sm text-brand/40">No image yet</span>
             </div>
           </div>
         )}
@@ -255,7 +253,7 @@ export default async function RecipeDetailPage({
         {/* Content Container - Overlapping */}
         <div className={cn(layout.containerSmall, "relative -mt-16")}>
           {/* Recipe Header Card */}
-          <Card className="p-6 mb-6 shadow-xs shadow-black/5">
+          <Card className="p-6 mb-6 shadow-sm shadow-black/10">
             <div className={spacing.cardLarge}>
               <div>
                 <h1 className="text-3xl font-semibold text-text-primary mb-2 wrap-break-word">
@@ -276,7 +274,10 @@ export default async function RecipeDetailPage({
                     )}
                   >
                     <span className="w-1 h-1 rounded-full bg-brand" />
-                    {recipe.cuisine} Cuisine
+                    {recipe.cuisine
+                      ? recipe.cuisine.charAt(0).toUpperCase() +
+                        recipe.cuisine.slice(1)
+                      : "Unknown cuisine"}
                   </p>
                 )}
               </div>

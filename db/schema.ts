@@ -7,6 +7,7 @@ import {
   boolean,
   serial,
   check,
+  json,
 } from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
 
@@ -46,6 +47,9 @@ export const recipes = pgTable(
     rating: integer("rating"), // 1-5, add check constraint
     notes: text("notes"),
 
+    // Onboarding flag
+    isSeeded: boolean("is_seeded").default(false).notNull(),
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -64,8 +68,8 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
     .references(() => recipes.id, { onDelete: "cascade" })
     .notNull(),
   ingredient: text("ingredient").notNull(),
-  amount: text("amount"), // e.g., "2 cups", "1 tbsp"
-  order: integer("order").notNull(), // Display order
+  amount: text("amount"),
+  order: integer("order").notNull(),
 });
 
 // Recipe instructions (one-to-many)
@@ -75,7 +79,7 @@ export const recipeInstructions = pgTable("recipe_instructions", {
     .references(() => recipes.id, { onDelete: "cascade" })
     .notNull(),
   step: text("step").notNull(),
-  order: integer("order").notNull(), // Step number
+  order: integer("order").notNull(),
 });
 
 // Tags table
@@ -102,10 +106,95 @@ export const recipeImages = pgTable("recipe_images", {
     .references(() => recipes.id, { onDelete: "cascade" })
     .notNull(),
   imageUrl: text("image_url").notNull(),
-  order: integer("order").notNull(), // Display order (0 = primary)
+  order: integer("order").notNull(),
 });
 
-// Relations (for Drizzle queries)
+// ============================================
+// ONBOARDING PROFILES
+// ============================================
+export const onboardingProfiles = pgTable("onboarding_profiles", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().unique(),
+
+  // Taste preferences
+  dietaryRestrictions: json("dietary_restrictions")
+    .$type<string[]>()
+    .default([]),
+  cuisinePreferences: json("cuisine_preferences").$type<string[]>().default([]),
+  skillLevel: text("skill_level"), // "beginner" | "intermediate" | "advanced"
+  cookingTime: text("cooking_time"), // "quick" | "moderate" | "elaborate"
+
+  // Completion tracking
+  onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
+  completedAt: timestamp("completed_at"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================
+// SEED RECIPES (system-level template bank)
+// ============================================
+export const seedRecipes = pgTable("seed_recipes", {
+  id: serial("id").primaryKey(),
+
+  // Core recipe info
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+
+  // Recipe details
+  servings: integer("servings"),
+  prepTime: integer("prep_time"),
+  cookTime: integer("cook_time"),
+  totalTime: integer("total_time"),
+
+  // Matching tags (used by prefill algorithm)
+  difficulty: text("difficulty").notNull(), // "beginner" | "intermediate" | "advanced"
+  cuisine: text("cuisine").notNull(), // "italian" | "mexican" | etc.
+  dietaryTags: json("dietary_tags").$type<string[]>().default([]), // ["vegan", "gluten-free", ...]
+  timeCategory: text("time_category").notNull(), // "quick" | "moderate" | "elaborate"
+
+  // Macros
+  calories: integer("calories"),
+  protein: integer("protein"),
+  carbs: integer("carbs"),
+  fat: integer("fat"),
+
+  // Source attribution
+  source: text("source"),
+  sourceUrl: text("source_url"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Seed recipe ingredients
+export const seedRecipeIngredients = pgTable("seed_recipe_ingredients", {
+  id: serial("id").primaryKey(),
+  seedRecipeId: integer("seed_recipe_id")
+    .references(() => seedRecipes.id, { onDelete: "cascade" })
+    .notNull(),
+  ingredient: text("ingredient").notNull(),
+  amount: text("amount"),
+  order: integer("order").notNull(),
+});
+
+// Seed recipe instructions
+export const seedRecipeInstructions = pgTable("seed_recipe_instructions", {
+  id: serial("id").primaryKey(),
+  seedRecipeId: integer("seed_recipe_id")
+    .references(() => seedRecipes.id, { onDelete: "cascade" })
+    .notNull(),
+  step: text("step").notNull(),
+  order: integer("order").notNull(),
+});
+
+// ============================================
+// RELATIONS
+// ============================================
+
 export const recipesRelations = relations(recipes, ({ many }) => ({
   ingredients: many(recipeIngredients),
   instructions: many(recipeInstructions),
@@ -155,6 +244,36 @@ export const recipeImagesRelations = relations(recipeImages, ({ one }) => ({
   }),
 }));
 
+// Seed recipe relations
+export const seedRecipesRelations = relations(seedRecipes, ({ many }) => ({
+  ingredients: many(seedRecipeIngredients),
+  instructions: many(seedRecipeInstructions),
+}));
+
+export const seedRecipeIngredientsRelations = relations(
+  seedRecipeIngredients,
+  ({ one }) => ({
+    seedRecipe: one(seedRecipes, {
+      fields: [seedRecipeIngredients.seedRecipeId],
+      references: [seedRecipes.id],
+    }),
+  }),
+);
+
+export const seedRecipeInstructionsRelations = relations(
+  seedRecipeInstructions,
+  ({ one }) => ({
+    seedRecipe: one(seedRecipes, {
+      fields: [seedRecipeInstructions.seedRecipeId],
+      references: [seedRecipes.id],
+    }),
+  }),
+);
+
+// ============================================
+// EXISTING TABLES (unchanged)
+// ============================================
+
 export const categories = pgTable("categories", {
   id: text("id")
     .primaryKey()
@@ -180,24 +299,18 @@ export const recipeCategories = pgTable("recipe_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Meal Plans (one per week or custom date range)
 export const mealPlans = pgTable("meal_plans", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull(),
-
-  // Week identification
-  startDate: timestamp("start_date").notNull(), // Monday 00:00
-  endDate: timestamp("end_date").notNull(), // Sunday 23:59
-
-  name: text("name"), // Optional: "Week of Jan 15", "Meal Prep Marathon"
-
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  name: text("name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Recipes assigned to specific meals
 export const mealPlanRecipes = pgTable(
   "meal_plan_recipes",
   {
@@ -210,29 +323,18 @@ export const mealPlanRecipes = pgTable(
     recipeId: uuid("recipe_id")
       .notNull()
       .references(() => recipes.id, { onDelete: "cascade" }),
-
-    // When & what meal
-    date: timestamp("date").notNull(), // Specific day (2025-01-15 00:00)
-    mealType: text("meal_type").notNull(), // "breakfast" | "lunch" | "dinner" | "snack"
-
-    // Servings override
-    customServings: integer("custom_servings"), // null = use recipe default
-
-    // Optional notes
-    notes: text("notes"), // "Double batch for leftovers"
-
-    // Order (for multiple recipes in same meal slot)
+    date: timestamp("date").notNull(),
+    mealType: text("meal_type").notNull(),
+    customServings: integer("custom_servings"),
+    notes: text("notes"),
     order: integer("order").default(0).notNull(),
-
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    // Prevent duplicate recipe in same meal slot
     uniqueMealSlot: sql`UNIQUE(meal_plan_id, date, meal_type, recipe_id)`,
   }),
 );
 
-// Grocery list (one per meal plan)
 export const groceryLists = pgTable("grocery_lists", {
   id: text("id")
     .primaryKey()
@@ -241,16 +343,12 @@ export const groceryLists = pgTable("grocery_lists", {
     .notNull()
     .unique()
     .references(() => mealPlans.id, { onDelete: "cascade" }),
-
-  // Track staleness
   lastGeneratedAt: timestamp("last_generated_at"),
-  isStale: boolean("is_stale").default(false).notNull(), // true when recipes change
-
+  isStale: boolean("is_stale").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Individual grocery items
 export const groceryListItems = pgTable("grocery_list_items", {
   id: text("id")
     .primaryKey()
@@ -258,29 +356,19 @@ export const groceryListItems = pgTable("grocery_list_items", {
   groceryListId: text("grocery_list_id")
     .notNull()
     .references(() => groceryLists.id, { onDelete: "cascade" }),
-
-  // Ingredient info
-  ingredient: text("ingredient").notNull(), // "whole milk"
-  amount: text("amount"), // "3.5 cups" (combined)
-  unit: text("unit"), // "cups" (normalized)
-
-  // Traceability
-  recipeIds: text("recipe_ids"), // JSON array: ["uuid1","uuid2"]
+  ingredient: text("ingredient").notNull(),
+  amount: text("amount"),
+  unit: text("unit"),
+  recipeIds: text("recipe_ids"),
   isManual: boolean("is_manual").default(false).notNull(),
-
-  // Shopping state
   isChecked: boolean("is_checked").default(false).notNull(),
   checkedAt: timestamp("checked_at"),
-
-  // Organization
-  category: text("category"), // "dairy" | "produce" | "meat" | "pantry" | "other"
+  category: text("category"),
   order: integer("order").default(0).notNull(),
-
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Add relations
 export const categoriesRelations = relations(categories, ({ many }) => ({
   recipeCategories: many(recipeCategories),
 }));
@@ -344,19 +432,14 @@ export const userPreferences = pgTable("user_preferences", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().unique(),
-
-  // Preferences
-  measurementUnit: text("measurement_unit").default("imperial"), // imperial or metric
+  measurementUnit: text("measurement_unit").default("imperial"),
   defaultServings: integer("default_servings").default(4),
   language: text("language").default("en"),
-  timeFormat: text("time_format").default("12"), // 12 or 24
-  defaultViewMode: text("default_view_mode").default("grid"), // grid or compact
-
-  // Notifications
+  timeFormat: text("time_format").default("12"),
+  defaultViewMode: text("default_view_mode").default("grid"),
   emailNotifications: boolean("email_notifications").default(true),
   weeklyDigest: boolean("weekly_digest").default(false),
   recipeReminders: boolean("recipe_reminders").default(false),
-
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

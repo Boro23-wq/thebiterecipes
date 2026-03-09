@@ -487,7 +487,8 @@ export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
                     }}
                     className={cn(menuItemCls)}
                   >
-                    {cuisine as string}
+                    {cuisine &&
+                      cuisine.charAt(0).toUpperCase() + cuisine.slice(1)}
                   </DropdownMenuCheckboxItem>
                 ))}
               </>
