@@ -19,6 +19,7 @@ interface RecipeCardProps {
   category?: string | null;
   calories?: number | null;
   isFavorite?: boolean | null;
+  isSeeded?: boolean | null;
   rating?: number | null;
   createdAt?: Date | string;
   actions?: React.ReactNode;
@@ -48,15 +49,28 @@ export function RecipeCard({
 
   const getTimeAgo = (date: Date | string | undefined): string => {
     if (!date) return "RECENTLY";
+
     const now = new Date();
     const dateObj = typeof date === "string" ? new Date(date) : date;
+
     if (isNaN(dateObj.getTime())) return "RECENTLY";
-    const diffTime = Math.abs(now.getTime() - dateObj.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 1) return "TODAY";
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const created = new Date(
+      dateObj.getFullYear(),
+      dateObj.getMonth(),
+      dateObj.getDate(),
+    );
+
+    const diffDays = Math.round(
+      (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (diffDays === 0) return "TODAY";
     if (diffDays === 1) return "YESTERDAY";
     if (diffDays < 30) return `${diffDays}D AGO`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)}MO AGO`;
+
     return `${Math.floor(diffDays / 365)}Y AGO`;
   };
 
@@ -79,35 +93,34 @@ export function RecipeCard({
           {/* Top overlays */}
           <div className="absolute top-2 left-2 right-2 flex items-start gap-2 z-10">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              {category && (
-                <span
-                  className={`backdrop-blur-sm text-[10px] font-semibold px-2 py-0.5 rounded-sm uppercase tracking-wide truncate max-w-[70%] ${
-                    hasImage
-                      ? "bg-black/50 text-white"
-                      : "bg-white/90 text-text-primary"
-                  }`}
-                >
-                  {category}
-                </span>
-              )}
+              <span
+                className={`backdrop-blur-sm text-[10px] font-semibold px-2 py-0.5 rounded-sm uppercase tracking-wide truncate max-w-[70%] ${
+                  hasImage
+                    ? "bg-black/50 text-white"
+                    : "bg-white/90 text-text-primary"
+                }`}
+              >
+                {category || "RECIPE"}
+              </span>
             </div>
+
             <div className="shrink-0 flex items-center">
               <FavoriteButton recipeId={id} isFavorite={isFavorite} />
               {actions}
             </div>
           </div>
 
-          {/* Gradient — dark for images, light for no-image */}
+          {/* Gradient */}
           <div
-            className={`absolute inset-x-0 bottom-0 h-[75%] bg-gradient-to-t z-[1] ${
+            className={`absolute inset-x-0 bottom-0 h-[75%] bg-linear-to-t z-1 ${
               hasImage
                 ? "[background:linear-gradient(to_top,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.7)_25%,rgba(0,0,0,0.45)_50%,rgba(0,0,0,0.15)_75%,transparent_100%)]"
                 : "from-white via-white/70 to-transparent"
             }`}
           />
 
-          {/* Content overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-3 z-[2]">
+          {/* Content */}
+          <div className="absolute inset-x-0 bottom-0 p-3 z-2">
             <div className="space-y-2">
               <div>
                 <h3
@@ -117,12 +130,15 @@ export function RecipeCard({
                 >
                   {title}
                 </h3>
+
                 <p
                   className={`text-[11px] mt-0.5 truncate ${
                     hasImage ? "text-white/70" : "text-text-muted"
                   }`}
                 >
-                  {cuisine || "Unknown cuisine"}
+                  {cuisine
+                    ? cuisine.charAt(0).toUpperCase() + cuisine.slice(1)
+                    : "Unknown cuisine"}
                 </p>
               </div>
 
@@ -142,12 +158,14 @@ export function RecipeCard({
                       {displayTime}m
                     </span>
                   )}
+
                   {!!servings && (
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {servings}
                     </span>
                   )}
+
                   {!!calories && (
                     <span className="flex items-center gap-1">
                       <Flame className="h-3 w-3" />
@@ -155,9 +173,12 @@ export function RecipeCard({
                     </span>
                   )}
                 </div>
+
                 <span
-                  className={`text-[10px] font-bold tracking-tight ${
-                    hasImage ? "text-brand-300" : "text-brand"
+                  className={`text-[10px] tracking-wide px-2 py-0.5 ${
+                    hasImage
+                      ? "bg-black/50 text-white"
+                      : "bg-white/90 text-text-primary"
                   }`}
                 >
                   {getTimeAgo(createdAt)}

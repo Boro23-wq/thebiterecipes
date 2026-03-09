@@ -291,7 +291,7 @@ export function ImportRecipeForm() {
           ))}
         </div>
 
-        <div className="px-6 pt-4!">
+        <div className="px-6 py-4">
           {/* URL mode */}
           {mode === "url" && (
             <div className="space-y-4">

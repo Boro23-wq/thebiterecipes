@@ -84,20 +84,21 @@ export default {
           "5": "hsl(var(--chart-5))",
         },
       },
-      boxShadow: {
-        // Neutral shadows (use these for layout/cards)
-        xs: "0 1px 2px rgba(0, 0, 0, 0.04)",
-        sm: "0 2px 6px rgba(0, 0, 0, 0.05)",
-        md: "0 4px 12px rgba(0, 0, 0, 0.06)",
+      bboxShadow: {
+        // Neutral shadows (for cards / panels)
+        xs: "0 1px 3px rgba(0,0,0,0.06)",
+        sm: "0 3px 10px rgba(0,0,0,0.08)",
+        md: "0 8px 20px rgba(0,0,0,0.10)",
+        lg: "0 14px 35px rgba(0,0,0,0.12)",
 
         // Brand shadows (use sparingly)
-        brand: "0 4px 16px rgba(255, 107, 53, 0.08)",
-        "brand-sm": "0 2px 8px rgba(255, 107, 53, 0.06)",
-        "brand-focus": "0 2px 4px rgba(255, 107, 53, 0.15)",
+        brand: "0 6px 20px rgba(255,107,53,0.12)",
+        "brand-sm": "0 3px 10px rgba(255,107,53,0.08)",
+        "brand-focus": "0 4px 12px rgba(255,107,53,0.18)",
 
-        // Component-specific shadows
-        menu: "0 -2px 12px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04)",
-        dropdown: "0 10px 30px rgba(0, 0, 0, 0.08)", // For filter dropdown
+        // Component shadows
+        menu: "0 -4px 20px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)",
+        dropdown: "0 16px 40px rgba(0,0,0,0.12)",
       },
       borderRadius: {
         lg: "var(--radius)",
