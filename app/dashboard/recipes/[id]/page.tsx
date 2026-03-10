@@ -10,8 +10,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { CategorySelector } from "@/components/category-selector";
 import {
   ArrowLeft,
-  ImagePlus,
-  Star,
+  Flame,
   Edit,
   Share2,
   ChefHat,
@@ -111,6 +110,17 @@ export default async function RecipeDetailPage({
           </Button>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="brand"
+              size="sm"
+              asChild
+              className="cursor-pointer"
+            >
+              <Link href={`/dashboard/recipes/${recipe.id}/cook`}>
+                <Flame className="h-4 w-4" />
+                Cook
+              </Link>
+            </Button>
             <CategorySelector
               recipeId={recipe.id}
               categories={categoriesWithSelection}

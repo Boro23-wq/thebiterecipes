@@ -223,7 +223,7 @@ export function RecipeDetailClient({
 
         {/* Instructions Tab */}
         <TabsContent value="instructions" className="mt-6">
-          <CardSm className="border border-border-brand-light p-6">
+          <CardSm className="shadow-sm shadow-black/10 p-6">
             <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
               <span className="w-1 h-6 bg-brand" />
               Instructions
@@ -253,7 +253,7 @@ export function RecipeDetailClient({
 
         {/* Notes Tab */}
         <TabsContent value="notes" className="mt-6">
-          <CardSm className="border border-border-brand-light p-6">
+          <CardSm className="shadow-sm shadow-black/10 p-6">
             <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
               <span className="w-1 h-6 bg-brand" />
               Notes

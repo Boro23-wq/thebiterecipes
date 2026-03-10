@@ -2,13 +2,12 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
-import { Search, Clock, Users, X } from "lucide-react";
+import { Search, Clock, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
