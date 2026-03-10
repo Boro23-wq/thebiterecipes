@@ -7,6 +7,9 @@ import { RecipeCard } from "@/components/recipe-card";
 import { CategoryCard } from "@/components/category-card";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/ui/card-wrapper";
+import { getCookingStats } from "@/app/dashboard/actions";
+import { Flame, TrendingUp, Trophy, ChefHat } from "lucide-react";
+import { CookingStatsChart } from "@/components/cooking-stats-chart";
 import { BookOpen, Plus, Heart, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { spacing, text, layout, icon } from "@/lib/design-tokens";
@@ -37,6 +40,12 @@ export default async function DashboardPage() {
     })
     .from(recipes)
     .where(eq(recipes.userId, user.id));
+
+  // ================================
+  // COOKING STATS
+  // ================================
+
+  const cookingStats = await getCookingStats();
 
   // ================================
   // PINNED CATEGORIES
@@ -94,9 +103,10 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className={layout.grid4}>
+      {/* Stats */}
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-3 lg:grid-cols-5">
         {/* Total Recipes */}
-        <StatsCard>
+        <StatsCard className="min-w-44 snap-start shrink-0 md:min-w-0 md:shrink">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-text-secondary">
               Total Recipes
@@ -108,7 +118,7 @@ export default async function DashboardPage() {
         </StatsCard>
 
         {/* Favorites */}
-        <StatsCard>
+        <StatsCard className="min-w-44 snap-start shrink-0 md:min-w-0 md:shrink">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-text-secondary">
               Favorites
@@ -120,7 +130,7 @@ export default async function DashboardPage() {
         </StatsCard>
 
         {/* Avg Cook Time */}
-        <StatsCard>
+        <StatsCard className="min-w-44 snap-start shrink-0 md:min-w-0 md:shrink">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-text-secondary">
               Avg Cook Time
@@ -131,8 +141,24 @@ export default async function DashboardPage() {
           <p className={cn(text.muted, "mt-1")}>Minutes per recipe</p>
         </StatsCard>
 
+        {/* Times Cooked */}
+        <StatsCard className="min-w-44 snap-start shrink-0 md:min-w-0 md:shrink">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">
+              Times Cooked
+            </span>
+            <Flame className={cn(icon.small, icon.brand)} />
+          </div>
+          <div className={text.statValue}>
+            {cookingStats?.totalCompleted ?? 0}
+          </div>
+          <p className={cn(text.muted, "mt-1")}>
+            {cookingStats?.thisWeekCount ?? 0} this week
+          </p>
+        </StatsCard>
+
         {/* Quick Add */}
-        <div className="flex flex-col justify-between bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-4 rounded-sm cursor-pointer">
+        <div className="min-w-44 snap-start shrink-0 md:min-w-0 md:shrink flex flex-col justify-between bg-brand-200 hover:bg-brand-300 border border-border-brand-light transition-colors p-4 rounded-sm cursor-pointer">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-text-secondary">
               Quick Action
@@ -148,6 +174,157 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* ================================
+          COOKING ACTIVITY
+      ================================= */}
+
+      {cookingStats && cookingStats.totalCompleted > 0 && (
+        <div className={spacing.card}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className={text.h3}>Cooking Activity</h2>
+              <p className={cn(text.muted, "mt-0.5")}>
+                Your cooking journey over the last 30 days
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Chart */}
+            <div className="lg:col-span-2 bg-white border border-brand-200 rounded-sm p-5">
+              <CookingStatsChart dailyActivity={cookingStats.dailyActivity} />
+            </div>
+
+            {/* Most Cooked */}
+            <div className="bg-white border border-brand-200 rounded-sm p-5">
+              <h3
+                className={cn(
+                  text.body,
+                  "font-semibold mb-4 flex items-center gap-2",
+                )}
+              >
+                <Trophy className="w-4 h-4 text-brand" />
+                Most Cooked
+              </h3>
+
+              <div className="space-y-3">
+                {cookingStats.mostCooked.map((item, idx) => (
+                  <Link
+                    key={item.recipeId}
+                    href={`/dashboard/recipes/${item.recipeId}`}
+                    className="flex items-center gap-3 group"
+                  >
+                    <span
+                      className={cn(
+                        "w-6 h-6 rounded-sm flex items-center justify-center text-xs font-bold shrink-0",
+                        idx === 0
+                          ? "bg-brand text-white"
+                          : "bg-brand-100 text-brand",
+                      )}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate group-hover:text-brand transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        Cooked {item.cookCount}{" "}
+                        {item.cookCount === 1 ? "time" : "times"}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+
+                {cookingStats.mostCooked.length === 0 && (
+                  <p className={cn(text.muted, "text-center py-4")}>
+                    Cook some recipes to see your favorites here!
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick stats row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="bg-linear-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-sm bg-brand/10 flex items-center justify-center">
+                  <Flame className="w-4 h-4 text-brand" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-text-primary">
+                {cookingStats.totalCompleted}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">Total Cooks</p>
+              {cookingStats.totalCompleted >= 10 && (
+                <span className="inline-block mt-2 text-[10px] font-semibold bg-brand/10 text-brand px-1.5 py-0.5 rounded-sm">
+                  Home Chef
+                </span>
+              )}
+              {cookingStats.totalCompleted >= 50 && (
+                <span className="inline-block mt-2 text-[10px] font-semibold bg-brand/10 text-brand px-1.5 py-0.5 rounded-sm">
+                  Master Chef
+                </span>
+              )}
+            </div>
+
+            <div className="bg-linear-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-sm bg-brand/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-brand" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-text-primary">
+                {cookingStats.thisWeekCount}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">This Week</p>
+              {cookingStats.thisWeekCount >= 3 && (
+                <span className="inline-block mt-2 text-[10px] font-semibold bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-sm">
+                  On a streak!
+                </span>
+              )}
+            </div>
+
+            <div className="bg-linear-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-sm bg-brand/10 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-brand" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-text-primary">
+                {cookingStats.totalCookingMinutes >= 60
+                  ? `${Math.floor(cookingStats.totalCookingMinutes / 60)}h ${cookingStats.totalCookingMinutes % 60}m`
+                  : `${cookingStats.totalCookingMinutes}m`}
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Time in Kitchen
+              </p>
+            </div>
+
+            <div className="bg-linear-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-sm bg-brand/10 flex items-center justify-center">
+                  <ChefHat className="w-4 h-4 text-brand" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-text-primary">
+                {cookingStats.completionRate}%
+              </p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Completion Rate
+              </p>
+              <div className="mt-2 h-1.5 bg-brand-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-brand rounded-full transition-all"
+                  style={{ width: `${cookingStats.completionRate}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================================
           STARTER RECIPES

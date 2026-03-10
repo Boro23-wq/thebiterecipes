@@ -3,6 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
+  startCookSession,
+  updateCookSession,
+} from "@/app/dashboard/recipes/[id]/cook/actions";
+import {
   X,
   ChevronLeft,
   ChevronRight,
@@ -18,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useVoiceCommands } from "@/lib/use-voice-commands";
 
 // ============================================
 // TYPES
@@ -659,11 +664,29 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   const [isComplete, setIsComplete] = useState(false);
   const [direction, setDirection] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
+  const [isReading, setIsReading] = useState(false);
+
   const intervalRefs = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const currentStepRef = useRef(currentStep);
+  const sessionIdRef = useRef<string | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     currentStepRef.current = currentStep;
+    // Stop reading when step changes
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsReading(false);
+    }
+  }, [currentStep]);
+
+  // ---- TRACK STEP PROGRESS ----
+  useEffect(() => {
+    if (sessionIdRef.current) {
+      updateCookSession(sessionIdRef.current, {
+        lastStepReached: currentStep,
+      }).catch(() => {});
+    }
   }, [currentStep]);
 
   const totalSteps = instructions.length;
@@ -696,6 +719,26 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
+
+  // ---- TRACK ABANDONED SESSION ON PAGE LEAVE ----
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (sessionIdRef.current && !isComplete && hasStarted) {
+        const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+        navigator.sendBeacon(
+          "/api/cook-session-abandon",
+          JSON.stringify({
+            sessionId: sessionIdRef.current,
+            lastStepReached: currentStepRef.current,
+            durationSeconds: duration,
+          }),
+        );
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isComplete, hasStarted]);
 
   // ---- TIMER TICK ----
   useEffect(() => {
@@ -755,9 +798,12 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
         setDirection(1);
         return s + 1;
       }
-      setIsComplete(true);
       return s;
     });
+    // Check if we're on the last step using the ref
+    if (currentStepRef.current >= totalSteps - 1) {
+      setIsComplete(true);
+    }
   }, [totalSteps]);
 
   const goPrev = useCallback(() => {
@@ -851,18 +897,90 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     });
   };
 
+  // ---- READ STEP ALOUD ----
+  const readCurrentStep = useCallback(() => {
+    if (!("speechSynthesis" in window)) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const instruction = instructions[currentStepRef.current];
+    if (!instruction) return;
+
+    const utterance = new SpeechSynthesisUtterance(instruction.step);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.lang = "en-US";
+
+    utterance.onstart = () => setIsReading(true);
+    utterance.onend = () => setIsReading(false);
+    utterance.onerror = () => setIsReading(false);
+
+    window.speechSynthesis.speak(utterance);
+  }, [instructions]);
+
+  // ---- VOICE COMMANDS ----
+  useVoiceCommands(
+    {
+      onNext: goNext,
+      onPrev: goPrev,
+
+      onStartTimer: () => toggleTimer(currentStep),
+      onPauseTimer: () => toggleTimer(currentStep),
+      onResetTimer: () => resetTimer(currentStep),
+
+      onFinish: () => setIsComplete(true),
+
+      onGoToStep: (step) => {
+        if (step >= 0 && step < totalSteps) {
+          goToStep(step);
+        }
+      },
+      onReadStep: readCurrentStep,
+    },
+    {
+      enabled: hasStarted && !isComplete,
+    },
+  );
+
+  const handleStartCooking = useCallback(async () => {
+    setHasStarted(true);
+    startTimeRef.current = Date.now();
+    try {
+      const id = await startCookSession(
+        recipe.id,
+        instructions.length,
+        currentServings,
+      );
+      sessionIdRef.current = id;
+    } catch {
+      // Don't block cooking if tracking fails
+    }
+  }, [recipe.id, instructions.length, currentServings]);
+
+  // ---- TRACK COMPLETION ----
+  useEffect(() => {
+    if (isComplete && sessionIdRef.current) {
+      const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      updateCookSession(sessionIdRef.current, {
+        status: "completed",
+        lastStepReached: totalSteps - 1,
+        durationSeconds: duration,
+      }).catch(() => {});
+    }
+  }, [isComplete, totalSteps]);
+
   if (!hasStarted) {
     return (
       <PreCookOverview
         recipe={recipe}
         ingredients={ingredients}
         instructions={instructions}
-        onStart={() => setHasStarted(true)}
+        onStart={handleStartCooking}
       />
     );
   }
 
-  // ---- COMPLETION ----
   if (isComplete) {
     return <CompletionScreen recipeName={recipe.title} recipeId={recipe.id} />;
   }
@@ -1080,6 +1198,17 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={readCurrentStep}
+                        className={cn(
+                          "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors cursor-pointer",
+                          isReading
+                            ? "bg-brand text-white"
+                            : "bg-brand-100 text-brand hover:bg-brand-200",
+                        )}
+                      >
+                        {isReading ? "Reading..." : "Read"}
+                      </button>
                       {currentTimer && (
                         <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-100 px-2 py-1 rounded-sm">
                           <Clock className="w-3 h-3" />
@@ -1089,7 +1218,12 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                     </div>
                   </div>
 
-                  <p className="text-lg sm:text-xl leading-relaxed text-text-primary font-medium">
+                  <p
+                    className={cn(
+                      "text-lg sm:text-xl leading-relaxed font-medium transition-colors duration-300",
+                      isReading ? "text-brand" : "text-text-primary",
+                    )}
+                  >
                     {currentInstruction?.step}
                   </p>
 
