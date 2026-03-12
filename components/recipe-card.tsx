@@ -112,10 +112,10 @@ export function RecipeCard({
 
           {/* Gradient */}
           <div
-            className={`absolute inset-x-0 bottom-0 h-[75%] bg-linear-to-t z-1 ${
+            className={`absolute inset-x-0 bottom-0 h-[80%] z-1 ${
               hasImage
-                ? "[background:linear-gradient(to_top,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.7)_25%,rgba(0,0,0,0.45)_50%,rgba(0,0,0,0.15)_75%,transparent_100%)]"
-                : "from-white via-white/70 to-transparent"
+                ? "[background:linear-gradient(to_top,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.82)_20%,rgba(0,0,0,0.65)_40%,rgba(0,0,0,0.35)_60%,rgba(0,0,0,0.15)_80%,transparent_100%)]"
+                : "bg-linear-to-t from-white via-white/80 to-transparent"
             }`}
           />
 
@@ -125,7 +125,9 @@ export function RecipeCard({
               <div>
                 <h3
                   className={`text-sm font-semibold leading-snug line-clamp-2 ${
-                    hasImage ? "text-white" : "text-text-primary"
+                    hasImage
+                      ? "text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
+                      : "text-text-primary"
                   }`}
                 >
                   {title}
@@ -133,7 +135,9 @@ export function RecipeCard({
 
                 <p
                   className={`text-[11px] mt-0.5 truncate ${
-                    hasImage ? "text-white/70" : "text-text-muted"
+                    hasImage
+                      ? "text-white/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]"
+                      : "text-text-muted"
                   }`}
                 >
                   {cuisine

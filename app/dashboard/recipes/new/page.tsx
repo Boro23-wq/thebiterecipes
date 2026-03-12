@@ -21,7 +21,11 @@ export default async function NewRecipePage() {
   return (
     <div className="min-h-screen">
       <form action={createRecipe}>
-        <RecipeImagesPickerSlots />
+        <RecipeImagesPickerSlots
+          title="Recipe Images"
+          helper="Add up to 3 images for your recipe"
+          maxSizeMB={4}
+        />
 
         {/* Form Content */}
         <div className={cn(layout.containerSmall, "py-6", spacing.section)}>

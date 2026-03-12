@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 type VoiceCommands = {
   onNext: () => void;
@@ -69,7 +69,49 @@ type UseVoiceCommandsOptions = {
 type UseVoiceCommandsReturn = {
   isSupported: boolean;
   isListening: boolean;
+  lastCommand: string | null;
+  clearLastCommand: () => void;
 };
+
+// Command definitions with labels for UI feedback
+const COMMAND_MAP: {
+  keywords: string[];
+  action: keyof VoiceCommands;
+  label: string;
+  arg?: "step";
+}[] = [
+  { keywords: ["next"], action: "onNext", label: "Next →" },
+  {
+    keywords: ["previous", "prev", "back"],
+    action: "onPrev",
+    label: "← Previous",
+  },
+  {
+    keywords: ["start timer", "play timer"],
+    action: "onStartTimer",
+    label: "Timer started",
+  },
+  {
+    keywords: ["pause timer", "stop timer"],
+    action: "onPauseTimer",
+    label: "Timer paused",
+  },
+  {
+    keywords: ["reset timer"],
+    action: "onResetTimer",
+    label: "Timer reset",
+  },
+  {
+    keywords: ["finish", "complete recipe"],
+    action: "onFinish",
+    label: "Finishing!",
+  },
+  {
+    keywords: ["read", "read step", "what does it say"],
+    action: "onReadStep",
+    label: "Reading aloud",
+  },
+];
 
 export function useVoiceCommands(
   commands: VoiceCommands,
@@ -78,12 +120,35 @@ export function useVoiceCommands(
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const shouldRestartRef = useRef(false);
   const commandsRef = useRef(commands);
+  const backoffRef = useRef(300);
+  const consecutiveErrorsRef = useRef(0);
 
   const [isListening, setIsListening] = useState(false);
+  const [lastCommand, setLastCommand] = useState<string | null>(null);
+  const lastCommandTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     commandsRef.current = commands;
   }, [commands]);
+
+  const clearLastCommand = useCallback(() => {
+    setLastCommand(null);
+    if (lastCommandTimerRef.current) {
+      clearTimeout(lastCommandTimerRef.current);
+      lastCommandTimerRef.current = null;
+    }
+  }, []);
+
+  const showCommand = useCallback(
+    (label: string) => {
+      clearLastCommand();
+      setLastCommand(label);
+      lastCommandTimerRef.current = setTimeout(() => {
+        setLastCommand(null);
+      }, 2000);
+    },
+    [clearLastCommand],
+  );
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -96,6 +161,8 @@ export function useVoiceCommands(
       shouldRestartRef.current = false;
       recognitionRef.current?.stop();
       recognitionRef.current = null;
+      backoffRef.current = 300;
+      consecutiveErrorsRef.current = 0;
 
       setTimeout(() => {
         setIsListening(false);
@@ -119,8 +186,10 @@ export function useVoiceCommands(
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-      console.log("Voice recognition started");
       setIsListening(true);
+      // Reset backoff on successful start
+      backoffRef.current = 300;
+      consecutiveErrorsRef.current = 0;
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -128,74 +197,50 @@ export function useVoiceCommands(
         .trim()
         .toLowerCase();
 
-      console.log("Voice command:", transcript);
-
-      if (transcript.includes("next")) {
-        commandsRef.current.onNext();
-        return;
-      }
-
-      if (
-        transcript.includes("previous") ||
-        transcript.includes("prev") ||
-        transcript.includes("back")
-      ) {
-        commandsRef.current.onPrev();
-        return;
-      }
-
-      if (
-        transcript.includes("start timer") ||
-        transcript.includes("play timer")
-      ) {
-        commandsRef.current.onStartTimer();
-        return;
-      }
-
-      if (
-        transcript.includes("pause timer") ||
-        transcript.includes("stop timer")
-      ) {
-        commandsRef.current.onPauseTimer();
-        return;
-      }
-
-      if (transcript.includes("reset timer")) {
-        commandsRef.current.onResetTimer();
-        return;
-      }
-
-      if (
-        transcript.includes("finish") ||
-        transcript.includes("complete recipe")
-      ) {
-        commandsRef.current.onFinish();
-        return;
-      }
-
-      if (
-        transcript.includes("read") ||
-        transcript.includes("read step") ||
-        transcript.includes("what does it say")
-      ) {
-        commandsRef.current.onReadStep();
-        return;
-      }
-
+      // Check step navigation first (has argument)
       const stepMatch = transcript.match(/step\s+(\d+)/);
-
       if (stepMatch) {
         const step = parseInt(stepMatch[1], 10) - 1;
-
         if (!Number.isNaN(step)) {
           commandsRef.current.onGoToStep(step);
+          showCommand(`Go to step ${step + 1}`);
+          return;
+        }
+      }
+
+      // Check all other commands
+      for (const cmd of COMMAND_MAP) {
+        if (cmd.keywords.some((kw) => transcript.includes(kw))) {
+          const fn = commandsRef.current[cmd.action];
+          if (typeof fn === "function") {
+            (fn as () => void)();
+            showCommand(cmd.label);
+            return;
+          }
         }
       }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.warn("Speech recognition error:", event.error);
+      const error = event.error;
+
+      // Don't count "no-speech" as a real error — just means silence
+      if (error === "no-speech") {
+        return;
+      }
+
+      // "aborted" happens when we intentionally stop — ignore
+      if (error === "aborted") {
+        return;
+      }
+
+      consecutiveErrorsRef.current += 1;
       setIsListening(false);
+
+      // After 5 consecutive real errors, stop trying
+      if (consecutiveErrorsRef.current >= 5) {
+        shouldRestartRef.current = false;
+      }
     };
 
     recognition.onend = () => {
@@ -203,13 +248,18 @@ export function useVoiceCommands(
 
       if (!shouldRestartRef.current) return;
 
+      // Exponential backoff: 300ms → 600ms → 1200ms → max 5000ms
+      const delay = Math.min(backoffRef.current, 5000);
+      backoffRef.current = delay * 2;
+
       window.setTimeout(() => {
+        if (!shouldRestartRef.current) return;
         try {
           recognition.start();
         } catch {
           // browser blocked restart
         }
-      }, 300);
+      }, delay);
     };
 
     try {
@@ -230,10 +280,21 @@ export function useVoiceCommands(
       recognition.stop();
       recognitionRef.current = null;
     };
-  }, [options.enabled, isSupported]);
+  }, [options.enabled, isSupported, showCommand]);
+
+  // Cleanup last command timer
+  useEffect(() => {
+    return () => {
+      if (lastCommandTimerRef.current) {
+        clearTimeout(lastCommandTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
     isSupported,
     isListening,
+    lastCommand,
+    clearLastCommand,
   };
 }

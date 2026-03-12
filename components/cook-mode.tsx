@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   startCookSession,
@@ -19,10 +19,13 @@ import {
   Minus,
   Plus,
   PartyPopper,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useVoiceCommands } from "@/lib/use-voice-commands";
+import { toast } from "sonner";
 
 // ============================================
 // TYPES
@@ -114,7 +117,6 @@ function playTimerAlert() {
       osc.start(time);
       osc.stop(time + 0.3);
     };
-    // Three ascending beeps
     playBeep(ctx.currentTime, 660);
     playBeep(ctx.currentTime + 0.35, 880);
     playBeep(ctx.currentTime + 0.7, 1100);
@@ -136,6 +138,83 @@ const CONFETTI_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
   duration: 2 + ((i * 19 + 5) % 20) / 10,
   delay: ((i * 13 + 2) % 8) / 10,
 }));
+
+// ============================================
+// VOICE COMMAND HINTS (one-time dismissable)
+// ============================================
+
+const VOICE_HINTS = [
+  { cmd: '"Next"', desc: "Go to next step" },
+  { cmd: '"Previous"', desc: "Go back" },
+  { cmd: '"Start timer"', desc: "Start the timer" },
+  { cmd: '"Pause timer"', desc: "Pause the timer" },
+  { cmd: '"Read"', desc: "Read step aloud" },
+  { cmd: '"Step 3"', desc: "Jump to step" },
+];
+
+// (Voice command feedback uses Sonner toasts)
+
+// ============================================
+// MIC INDICATOR BUTTON
+// ============================================
+
+function MicIndicator({
+  isListening,
+  isSupported,
+  voiceEnabled,
+  onToggle,
+}: {
+  isListening: boolean;
+  isSupported: boolean;
+  voiceEnabled: boolean;
+  onToggle: () => void;
+}) {
+  if (!isSupported) return null;
+
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "relative flex items-center justify-center w-10 h-10 rounded-full transition-all cursor-pointer active:scale-90",
+        voiceEnabled
+          ? isListening
+            ? "bg-brand/10 text-brand"
+            : "bg-amber-100 text-amber-500"
+          : "bg-gray-100 text-text-muted",
+      )}
+    >
+      {voiceEnabled ? (
+        <Mic className="w-4.5 h-4.5" />
+      ) : (
+        <MicOff className="w-4.5 h-4.5" />
+      )}
+
+      {/* Pulsing ring when actively listening */}
+      {voiceEnabled && isListening && (
+        <motion.div
+          className="absolute inset-0 rounded-full border-2 border-brand"
+          animate={{
+            scale: [1, 1.4, 1],
+            opacity: [0.6, 0, 0.6],
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+
+      {/* Small status dot */}
+      <span
+        className={cn(
+          "absolute top-0.5 right-0.5 w-2 h-2 rounded-full border border-white",
+          voiceEnabled
+            ? isListening
+              ? "bg-green-500"
+              : "bg-amber-400"
+            : "bg-gray-300",
+        )}
+      />
+    </button>
+  );
+}
 
 // ============================================
 // TIMER RING COMPONENT
@@ -229,17 +308,11 @@ function TimerRing({
           )}
         >
           {isComplete ? (
-            <>
-              <Check className="w-4 h-4" />
-            </>
+            <Check className="w-4 h-4" />
           ) : timer.isRunning ? (
-            <>
-              <Pause className="w-4 h-4" />
-            </>
+            <Pause className="w-4 h-4" />
           ) : (
-            <>
-              <Play className="w-4 h-4" />
-            </>
+            <Play className="w-4 h-4" />
           )}
         </button>
         <button
@@ -286,16 +359,17 @@ function FloatingTimerPanel({
 
   return (
     <>
-      {/* Timer button */}
+      {/* Timer button — relative wrapper so badge is positioned correctly */}
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          "flex items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 hover:bg-brand-600 transition cursor-pointer",
+          "relative flex items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 hover:bg-brand-600 transition cursor-pointer",
           isMobile ? "w-12 h-12" : "fixed bottom-6 right-6 z-50 w-14 h-14",
         )}
       >
         <Clock className="w-5 h-5" />
 
+        {/* Badge — relative to the button */}
         <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
           {activeTimers.length}
         </span>
@@ -317,12 +391,10 @@ function FloatingTimerPanel({
               transition={{ type: "spring", damping: 20 }}
               className="bg-white rounded-t-lg sm:rounded-sm w-full sm:w-96 max-h-[60vh] overflow-hidden shadow-xl border border-border-light"
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
                 <span className="text-sm font-semibold text-text-primary">
                   Active Timers
                 </span>
-
                 <button
                   onClick={() => setOpen(false)}
                   className="p-1 cursor-pointer text-text-secondary hover:text-text-primary"
@@ -331,13 +403,11 @@ function FloatingTimerPanel({
                 </button>
               </div>
 
-              {/* Timer list */}
               <div className="p-3 space-y-2 max-h-72 overflow-y-auto">
                 {activeTimers.map(([stepIndex, timer]) => {
                   const isComplete = timer.remainingSeconds <= 0;
                   const isUrgent =
                     timer.remainingSeconds <= 30 && timer.remainingSeconds > 0;
-
                   const isCurrent = stepIndex === currentStep;
 
                   return (
@@ -365,7 +435,6 @@ function FloatingTimerPanel({
                         >
                           {stepIndex + 1}
                         </div>
-
                         <span className="text-sm text-text-primary">
                           Step {stepIndex + 1}
                         </span>
@@ -535,7 +604,6 @@ function PreCookOverview({
         transition={{ type: "spring", damping: 20 }}
         className="relative w-full max-w-xl bg-white rounded-md shadow-xl border border-border-light overflow-hidden"
       >
-        {/* Close */}
         <Link
           href={`/dashboard/recipes/${recipe.id}`}
           className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center text-text-secondary hover:text-text-primary"
@@ -543,7 +611,6 @@ function PreCookOverview({
           <X className="w-5 h-5" />
         </Link>
 
-        {/* Header */}
         <div className="px-6 pt-8 pb-6 text-center border-b border-border-light">
           <div className="w-14 h-14 mx-auto rounded-md bg-linear-to-br from-brand to-brand-600 flex items-center justify-center mb-4">
             <UtensilsCrossed className="w-7 h-7 text-white" />
@@ -560,45 +627,38 @@ function PreCookOverview({
                 {recipe.totalTime} min
               </span>
             )}
-
             <span>{instructions.length} steps</span>
             <span>{ingredients.length} ingredients</span>
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-6 space-y-6 max-h-[60vh] overflow-y-auto">
-          {/* Ingredients */}
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
               <UtensilsCrossed className="w-4 h-4 text-brand" />
               Ingredients to prepare
             </h2>
-
             <div className="grid grid-cols-[110px_1fr] gap-y-2 text-sm pl-6">
               {ingredients.map((ing) => (
-                <>
+                <Fragment key={ing.id}>
                   <span className="font-semibold text-brand tabular-nums">
                     {ing.amount}
                   </span>
                   <span className="text-text-primary">{ing.ingredient}</span>
-                </>
+                </Fragment>
               ))}
             </div>
           </div>
 
-          {/* Timers */}
           {timerSteps.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-brand" />
                 Timed steps
               </h2>
-
               <div className="space-y-2 pl-6">
                 {timerSteps.map((inst) => {
                   const seconds = parseTimerFromStep(inst.step);
-
                   return (
                     <div
                       key={inst.id}
@@ -607,7 +667,6 @@ function PreCookOverview({
                       <span className="text-xs font-semibold text-brand bg-brand-100 px-2 py-0.5 rounded-sm">
                         {seconds ? formatTime(seconds) : ""}
                       </span>
-
                       <span className="text-text-secondary line-clamp-1">
                         {inst.step}
                       </span>
@@ -619,7 +678,6 @@ function PreCookOverview({
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-border-light flex justify-end">
           <motion.button
             onClick={onStart}
@@ -665,6 +723,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   const [direction, setDirection] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
   const [isReading, setIsReading] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   const intervalRefs = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const currentStepRef = useRef(currentStep);
@@ -673,14 +732,12 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
 
   useEffect(() => {
     currentStepRef.current = currentStep;
-    // Stop reading when step changes
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       setIsReading(false);
     }
   }, [currentStep]);
 
-  // ---- TRACK STEP PROGRESS ----
   useEffect(() => {
     if (sessionIdRef.current) {
       updateCookSession(sessionIdRef.current, {
@@ -720,7 +777,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     };
   }, []);
 
-  // ---- TRACK ABANDONED SESSION ON PAGE LEAVE ----
+  // ---- TRACK ABANDONED SESSION ----
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (sessionIdRef.current && !isComplete && hasStarted) {
@@ -760,7 +817,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
               clearInterval(intervalRefs.current.get(stepIndex));
               intervalRefs.current.delete(stepIndex);
               playTimerAlert();
-              // Auto-advance to next step if enabled and timer was on current step
               if (
                 autoAdvance &&
                 stepIndex === currentStep &&
@@ -769,7 +825,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                 setTimeout(() => {
                   setDirection(1);
                   setCurrentStep((s) => s + 1);
-                }, 1500); // 1.5s delay so user sees "Done!"
+                }, 1500);
               }
             }
             return next;
@@ -783,7 +839,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     });
   }, [timers, autoAdvance, currentStep, totalSteps]);
 
-  // ---- CLEANUP INTERVALS ----
   useEffect(() => {
     return () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -791,7 +846,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     };
   }, []);
 
-  // ---- NAVIGATION (must be before keyboard effect) ----
+  // ---- NAVIGATION ----
   const goNext = useCallback(() => {
     setCurrentStep((s) => {
       if (s < totalSteps - 1) {
@@ -800,7 +855,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
       }
       return s;
     });
-    // Check if we're on the last step using the ref
     if (currentStepRef.current >= totalSteps - 1) {
       setIsComplete(true);
     }
@@ -823,7 +877,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     });
   }, []);
 
-  // ---- KEYBOARD NAV (after navigation functions) ----
+  // ---- KEYBOARD NAV ----
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === " ") {
@@ -852,11 +906,8 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   const toggleIngredient = (id: number) => {
     setCheckedIngredients((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -901,7 +952,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   const readCurrentStep = useCallback(() => {
     if (!("speechSynthesis" in window)) return;
 
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
     const instruction = instructions[currentStepRef.current];
@@ -920,17 +970,14 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   }, [instructions]);
 
   // ---- VOICE COMMANDS ----
-  useVoiceCommands(
+  const { isSupported, isListening, lastCommand } = useVoiceCommands(
     {
       onNext: goNext,
       onPrev: goPrev,
-
       onStartTimer: () => toggleTimer(currentStep),
       onPauseTimer: () => toggleTimer(currentStep),
       onResetTimer: () => resetTimer(currentStep),
-
       onFinish: () => setIsComplete(true),
-
       onGoToStep: (step) => {
         if (step >= 0 && step < totalSteps) {
           goToStep(step);
@@ -939,9 +986,20 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
       onReadStep: readCurrentStep,
     },
     {
-      enabled: hasStarted && !isComplete,
+      enabled: hasStarted && !isComplete && voiceEnabled,
     },
   );
+
+  // ---- SONNER TOAST FOR VOICE COMMANDS ----
+  useEffect(() => {
+    if (lastCommand) {
+      toast(lastCommand, {
+        duration: 1200,
+        className:
+          "!bg-white !text-text-primary !border !border-border-light !rounded-sm !shadow-md !px-3 !py-1.5 !w-auto !max-w-fit",
+      });
+    }
+  }, [lastCommand]);
 
   const handleStartCooking = useCallback(async () => {
     setHasStarted(true);
@@ -1018,12 +1076,22 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
         </div>
 
         <div className="flex items-center justify-between px-4 py-3">
-          <Link
-            href={`/dashboard/recipes/${recipe.id}`}
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors active:scale-95"
-          >
-            <X className="w-5 h-5" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/dashboard/recipes/${recipe.id}`}
+              className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors active:scale-95"
+            >
+              <X className="w-5 h-5" />
+            </Link>
+
+            {/* Mic indicator in top bar */}
+            <MicIndicator
+              isListening={isListening}
+              isSupported={isSupported}
+              voiceEnabled={voiceEnabled}
+              onToggle={() => setVoiceEnabled((v) => !v)}
+            />
+          </div>
 
           <div className="flex flex-col items-center">
             <h1 className="text-sm font-semibold text-text-primary line-clamp-1 max-w-50 sm:max-w-xs">
@@ -1054,11 +1122,9 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
         </div>
       </div>
 
-      {/* ═══════════════ MAIN CONTENT (SPLIT LAYOUT) ═══════════════ */}
+      {/* ═══════════════ MAIN CONTENT ═══════════════ */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* ---- INGREDIENTS PANEL ---- */}
-
-        {/* Mobile accordion toggle - always visible on small screens */}
         <button
           onClick={() => setShowIngredients(!showIngredients)}
           className="lg:hidden w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-text-primary bg-white/80 border-b border-brand-200 shrink-0"
@@ -1078,7 +1144,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
           </motion.span>
         </button>
 
-        {/* Collapsible ingredient list */}
         <div
           className={cn(
             "scrollbar-bite bg-white/60 backdrop-blur-sm border-b lg:border-b-0 lg:border-r border-brand-200 overflow-y-auto transition-all duration-300",
@@ -1174,7 +1239,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
             ))}
           </div>
 
-          <div className="flex-1 flex items-center justify-center w-full max-w-2xl">
+          <div className="flex-1 flex items-center justify-center w-full max-w-2xl relative">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={currentStep}
@@ -1190,77 +1255,103 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                 onDragEnd={handleDragEnd}
                 className="w-full cursor-grab active:cursor-grabbing"
               >
-                <div className="bg-white/80 backdrop-blur-sm rounded-sm border border-brand-200 shadow-brand-sm p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-sm bg-linear-to-br from-brand to-brand-600 flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-sm font-bold">
-                        {currentStep + 1}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={readCurrentStep}
-                        className={cn(
-                          "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors cursor-pointer",
-                          isReading
-                            ? "bg-brand text-white"
-                            : "bg-brand-100 text-brand hover:bg-brand-200",
-                        )}
-                      >
-                        {isReading ? "Reading..." : "Read"}
-                      </button>
-                      {currentTimer && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-100 px-2 py-1 rounded-sm">
-                          <Clock className="w-3 h-3" />
-                          {formatTime(currentTimer.totalSeconds)}
+                <div className="relative">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-sm border border-brand-200 shadow-brand-sm p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-sm bg-linear-to-br from-brand to-brand-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm font-bold">
+                          {currentStep + 1}
                         </span>
-                      )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={readCurrentStep}
+                          className={cn(
+                            "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors cursor-pointer",
+                            isReading
+                              ? "bg-brand text-white"
+                              : "bg-brand-100 text-brand hover:bg-brand-200",
+                          )}
+                        >
+                          {isReading ? "Reading..." : "Read"}
+                        </button>
+                        {currentTimer && (
+                          <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-100 px-2 py-1 rounded-sm">
+                            <Clock className="w-3 h-3" />
+                            {formatTime(currentTimer.totalSeconds)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <p
-                    className={cn(
-                      "text-lg sm:text-xl leading-relaxed font-medium transition-colors duration-300",
-                      isReading ? "text-brand" : "text-text-primary",
-                    )}
-                  >
-                    {currentInstruction?.step}
-                  </p>
-
-                  {/* Auto-advance toggle */}
-                  {currentTimer && (
-                    <button
-                      onClick={() => setAutoAdvance(!autoAdvance)}
+                    <p
                       className={cn(
-                        "mt-4 flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer",
-                        autoAdvance ? "text-brand" : "text-text-muted",
+                        "text-lg sm:text-xl leading-relaxed font-medium transition-colors duration-300",
+                        isReading ? "text-brand" : "text-text-primary",
                       )}
                     >
-                      <div
+                      {currentInstruction?.step}
+                    </p>
+
+                    {currentTimer && (
+                      <button
+                        onClick={() => setAutoAdvance(!autoAdvance)}
                         className={cn(
-                          "w-8 h-4.5 rounded-full transition-colors relative",
-                          autoAdvance ? "bg-brand" : "bg-brand-300",
+                          "mt-4 flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer",
+                          autoAdvance ? "text-brand" : "text-text-muted",
                         )}
                       >
-                        <motion.div
-                          className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
-                          animate={{ left: autoAdvance ? 16 : 2 }}
-                          transition={{ duration: 0.2 }}
+                        <div
+                          className={cn(
+                            "w-8 h-4.5 rounded-full transition-colors relative",
+                            autoAdvance ? "bg-brand" : "bg-brand-300",
+                          )}
+                        >
+                          <motion.div
+                            className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
+                            animate={{ left: autoAdvance ? 16 : 2 }}
+                            transition={{ duration: 0.2 }}
+                          />
+                        </div>
+                        Auto-advance when timer ends
+                      </button>
+                    )}
+
+                    {currentTimer && (
+                      <div className="mt-8 flex justify-center">
+                        <TimerRing
+                          timer={currentTimer}
+                          onToggle={() => toggleTimer(currentStep)}
+                          onReset={() => resetTimer(currentStep)}
                         />
                       </div>
-                      Auto-advance when timer ends
-                    </button>
-                  )}
+                    )}
 
-                  {currentTimer && (
-                    <div className="mt-8 flex justify-center">
-                      <TimerRing
-                        timer={currentTimer}
-                        onToggle={() => toggleTimer(currentStep)}
-                        onReset={() => resetTimer(currentStep)}
-                      />
-                    </div>
-                  )}
+                    {/* Voice hint */}
+                    {isSupported && voiceEnabled && (
+                      <div className="mt-6 flex items-center gap-2 text-[11px] text-text-muted bg-brand-50 border border-brand-200 rounded-sm px-2.5 py-1.5 w-fit">
+                        <Mic className="w-3 h-3 text-brand" />
+                        <span>
+                          Try saying{" "}
+                          <span className="font-semibold text-brand">
+                            &quot;Next&quot;
+                          </span>
+                          ,{" "}
+                          <span className="font-semibold text-brand">
+                            &quot;Previous&quot;
+                          </span>
+                          , or{" "}
+                          <span className="font-semibold text-brand">
+                            &quot;Start timer&quot;
+                          </span>
+                          , or{" "}
+                          <span className="font-semibold text-brand">
+                            &quot;Finish&quot;
+                          </span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-center text-xs text-text-muted mt-4 select-none">
@@ -1271,13 +1362,13 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
           </div>
 
           <div className="flex items-center justify-between w-full max-w-2xl mt-6 gap-4">
-            {/* LEFT: arrows */}
+            {/* LEFT: nav arrows */}
             <div className="flex items-center gap-4">
               <button
                 onClick={goPrev}
                 disabled={currentStep === 0}
                 className={cn(
-                  "flex items-center gap-2 px-6 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
+                  "flex items-center gap-2 px-4 sm:px-6 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
                   currentStep === 0
                     ? "opacity-30 cursor-not-allowed text-text-muted"
                     : "bg-white/80 text-text-primary hover:bg-white border border-brand-200 shadow-brand-xs",
@@ -1290,13 +1381,13 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
               <button
                 onClick={goNext}
                 className={cn(
-                  "flex items-center gap-2 px-8 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
+                  "flex items-center gap-2 px-6 sm:px-8 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
                   currentStep === totalSteps - 1
                     ? "bg-linear-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20"
                     : "bg-brand text-white hover:bg-brand-600 shadow-brand",
                 )}
               >
-                <span>
+                <span className="hidden sm:inline">
                   {currentStep === totalSteps - 1 ? "Finish!" : "Next"}
                 </span>
                 {currentStep === totalSteps - 1 ? (
@@ -1320,7 +1411,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
         </div>
       </div>
 
-      {/* Persistent timer bar */}
+      {/* Persistent timer bar (desktop) */}
       <div className="hidden sm:block">
         <FloatingTimerPanel
           timers={timers}
