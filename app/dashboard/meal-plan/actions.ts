@@ -4,7 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { parseIngredient } from "@/lib/parse-ingredient";
+import { aggregateGroceryWithGemini } from "@/lib/gemini";
 import {
   groceryListItems,
   groceryLists,
@@ -14,18 +14,7 @@ import {
   recipeIngredients,
 } from "@/db/schema";
 
-type MealPlanRecipeWithDetails = {
-  customServings: number | null;
-  recipe: {
-    id: string;
-    title: string;
-    servings: number | null;
-    ingredients: Array<{
-      amount: string | null;
-      ingredient: string;
-    }>;
-  };
-};
+// ===== MEAL PLAN CRUD =====
 
 export async function createMealPlan(input: {
   startDate: Date;
@@ -153,7 +142,7 @@ export async function updateMealPlanRecipeServings(input: {
   revalidatePath("/dashboard/meal-plan");
 }
 
-// ===== GROCERY LIST GENERATION =====
+// ===== GROCERY LIST GENERATION (Gemini-powered) =====
 
 async function markGroceryListStale(mealPlanId: string) {
   await db
@@ -206,7 +195,7 @@ export async function generateGroceryList(mealPlanId: string) {
     };
   }
 
-  // Save manual items & checked state
+  // Save manual items & checked state before clearing
   const manualItems = groceryList.items.filter((i) => i.isManual);
   const checkedState = new Map(
     groceryList.items
@@ -224,25 +213,69 @@ export async function generateGroceryList(mealPlanId: string) {
       ),
     );
 
-  // Aggregate ingredients with smart combining
-  const aggregated = aggregateIngredients(
-    plan.mealPlanRecipes as MealPlanRecipeWithDetails[],
-  );
+  // Build input for Gemini
+  const recipeInputs = plan.mealPlanRecipes.map((mpr) => {
+    const recipe = mpr.recipe;
+    const servingsMultiplier =
+      mpr.customServings && recipe.servings
+        ? mpr.customServings / recipe.servings
+        : 1;
+
+    return {
+      recipeName: recipe.title,
+      servingsMultiplier,
+      ingredients: recipe.ingredients.map((ing) => ({
+        amount: ing.amount,
+        ingredient: ing.ingredient,
+      })),
+    };
+  });
+
+  // Call Gemini for smart aggregation (with fallback)
+  let aggregated;
+  try {
+    aggregated = await aggregateGroceryWithGemini(recipeInputs);
+  } catch (error) {
+    console.error("Gemini grocery aggregation failed, using fallback:", error);
+    aggregated = fallbackAggregate(recipeInputs);
+  }
 
   // Insert new items
   const newItems = aggregated.map((item, idx) => {
     const prevChecked = checkedState.get(item.ingredient.toLowerCase());
 
+    // Match recipe IDs from source ingredients for traceability
+    const matchedRecipeIds = new Set<string>();
+    for (const mpr of plan.mealPlanRecipes) {
+      for (const src of item.sourceIngredients) {
+        const srcLower = src.toLowerCase();
+        const hasMatch = mpr.recipe.ingredients.some(
+          (ing) =>
+            srcLower.includes(ing.ingredient.toLowerCase()) ||
+            ing.ingredient
+              .toLowerCase()
+              .includes(item.ingredient.toLowerCase()),
+        );
+        if (hasMatch) {
+          matchedRecipeIds.add(mpr.recipe.id);
+        }
+      }
+    }
+
     return {
       groceryListId: groceryList!.id,
       ingredient: item.ingredient,
-      amount: item.amount,
-      unit: item.unit,
-      recipeIds: JSON.stringify(item.recipes),
+      amount: item.amount || null,
+      unit: item.unit || null,
+      recipeIds:
+        matchedRecipeIds.size > 0
+          ? JSON.stringify(Array.from(matchedRecipeIds))
+          : null,
       isManual: false,
       isChecked: prevChecked?.isChecked ?? false,
       checkedAt: prevChecked?.checkedAt ?? null,
-      category: categorizeIngredient(item.ingredient),
+      category: item.category,
+      notes: item.notes,
       order: idx,
     };
   });
@@ -264,99 +297,98 @@ export async function generateGroceryList(mealPlanId: string) {
   return { success: true, itemCount: newItems.length + manualItems.length };
 }
 
-// ===== SMART COMBINING LOGIC =====
-function aggregateIngredients(mealPlanRecipes: MealPlanRecipeWithDetails[]) {
-  const ingredientMap = new Map<
+// ===== FALLBACK AGGREGATION (if Gemini fails) =====
+
+function fallbackAggregate(
+  recipeInputs: Array<{
+    recipeName: string;
+    servingsMultiplier: number;
+    ingredients: Array<{ amount: string | null; ingredient: string }>;
+  }>,
+) {
+  const map = new Map<
     string,
     {
       ingredient: string;
       totalAmount: number;
-      recipes: Array<{ id: string; title: string }>;
+      unit: string;
+      sourceIngredients: string[];
     }
   >();
 
-  for (const mpr of mealPlanRecipes) {
-    const recipe = mpr.recipe;
-    const servingsMultiplier =
-      mpr.customServings && recipe.servings
-        ? mpr.customServings / recipe.servings
-        : 1;
-
+  for (const recipe of recipeInputs) {
     for (const ing of recipe.ingredients) {
-      const parsed = parseIngredient(`${ing.amount || ""} ${ing.ingredient}`);
-      const key = parsed.ingredient.toLowerCase().trim();
+      const raw = `${ing.amount || ""} ${ing.ingredient}`.trim();
+      const key = ing.ingredient.toLowerCase().trim();
 
-      if (!ingredientMap.has(key)) {
-        ingredientMap.set(key, {
-          ingredient: parsed.ingredient,
+      if (!map.has(key)) {
+        map.set(key, {
+          ingredient: ing.ingredient,
           totalAmount: 0,
-          recipes: [],
+          unit: "",
+          sourceIngredients: [],
         });
       }
 
-      const entry = ingredientMap.get(key)!;
+      const entry = map.get(key)!;
+      entry.sourceIngredients.push(raw);
 
-      const numericAmount = parseAmount(parsed.amount);
-      if (numericAmount !== null) {
-        entry.totalAmount += numericAmount * servingsMultiplier;
-      }
+      // Basic amount parsing
+      if (ing.amount) {
+        const fractionMatch = ing.amount.match(/(\d+)?\s*(\d+)\/(\d+)/);
+        let num = 0;
+        if (fractionMatch) {
+          num =
+            parseInt(fractionMatch[1] || "0") +
+            parseInt(fractionMatch[2]) / parseInt(fractionMatch[3]);
+        } else {
+          num = parseFloat(ing.amount) || 0;
+        }
+        entry.totalAmount += num * recipe.servingsMultiplier;
 
-      if (!entry.recipes.some((r) => r.id === recipe.id)) {
-        entry.recipes.push({ id: recipe.id, title: recipe.title });
+        // Try to extract unit from amount string
+        const unitMatch = ing.amount.match(
+          /(?:\d[\d\/\s]*)\s*(lbs?|oz|cups?|tbsp|tsp|cloves?|cans?|containers?|gallons?|ml|l|kg|g)\b/i,
+        );
+        if (unitMatch && !entry.unit) {
+          entry.unit = unitMatch[1].toLowerCase();
+        }
       }
     }
   }
 
-  return Array.from(ingredientMap.values()).map((entry) => ({
+  return Array.from(map.values()).map((entry) => ({
     ingredient: entry.ingredient,
-    amount: formatAmount(entry.totalAmount),
-    unit: null,
-    recipes: entry.recipes,
+    amount:
+      entry.totalAmount > 0
+        ? String(Math.round(entry.totalAmount * 100) / 100)
+        : "",
+    unit: entry.unit,
+    category: basicCategorize(entry.ingredient),
+    notes: null as string | null,
+    sourceIngredients: entry.sourceIngredients,
   }));
 }
 
-function parseAmount(amountStr: string | null): number | null {
-  if (!amountStr) return null;
-
-  // Handle fractions: "1/2" → 0.5, "2 1/4" → 2.25
-  const fractionMatch = amountStr.match(/(\d+)?\s*(\d+)\/(\d+)/);
-  if (fractionMatch) {
-    const whole = parseInt(fractionMatch[1] || "0");
-    const num = parseInt(fractionMatch[2]);
-    const denom = parseInt(fractionMatch[3]);
-    return whole + num / denom;
-  }
-
-  const num = parseFloat(amountStr);
-  return isNaN(num) ? null : num;
-}
-
-function formatAmount(amount: number): string {
-  if (amount === 0) return "";
-
-  // Round to 2 decimals
-  const rounded = Math.round(amount * 100) / 100;
-
-  // Convert to fraction if clean
-  if (rounded === 0.25) return "1/4";
-  if (rounded === 0.33) return "1/3";
-  if (rounded === 0.5) return "1/2";
-  if (rounded === 0.66) return "2/3";
-  if (rounded === 0.75) return "3/4";
-
-  return rounded.toString();
-}
-
-function categorizeIngredient(name: string): string {
+function basicCategorize(
+  name: string,
+): "produce" | "meat" | "dairy" | "pantry" | "other" {
   const lower = name.toLowerCase();
-
-  if (/(milk|cheese|yogurt|butter|cream)/i.test(lower)) return "dairy";
-  if (/(chicken|beef|pork|fish|turkey|lamb)/i.test(lower)) return "meat";
-  if (/(lettuce|tomato|onion|carrot|pepper|spinach)/i.test(lower))
+  if (/(milk|cheese|yogurt|butter|cream|egg)/i.test(lower)) return "dairy";
+  if (/(chicken|beef|pork|fish|turkey|lamb|shrimp|salmon|tofu)/i.test(lower))
+    return "meat";
+  if (
+    /(lettuce|tomato|onion|carrot|pepper|spinach|garlic|lemon|lime|cilantro|parsley|cucumber|potato|avocado|ginger|basil|mint)/i.test(
+      lower,
+    )
+  )
     return "produce";
-  if (/(flour|sugar|salt|pepper|oil|vinegar|sauce)/i.test(lower))
+  if (
+    /(flour|sugar|salt|pepper|oil|vinegar|sauce|rice|pasta|cumin|paprika|cinnamon|can|broth|stock)/i.test(
+      lower,
+    )
+  )
     return "pantry";
-
   return "other";
 }
 
@@ -419,17 +451,26 @@ export async function addManualGroceryItem(input: {
 
   const nextOrder = items[0]?.order ? items[0].order + 1 : 0;
 
-  const parsed = parseIngredient(input.ingredient);
+  // Simple parse: try to extract amount from start of string
+  const amountMatch = input.ingredient.match(
+    /^([\d\s\/\.]+(?:lbs?|oz|cups?|tbsp|tsp|g|kg|ml|l)?)\s+(.+)/i,
+  );
+
+  const ingredient = amountMatch
+    ? amountMatch[2].trim()
+    : input.ingredient.trim();
+  const amount = amountMatch ? amountMatch[1].trim() : input.amount || null;
 
   await db.insert(groceryListItems).values({
     groceryListId: input.groceryListId,
-    ingredient: parsed.ingredient,
-    amount: parsed.amount || input.amount || null,
+    ingredient,
+    amount,
     unit: null,
     recipeIds: null,
     isManual: true,
     isChecked: false,
-    category: input.category ?? categorizeIngredient(parsed.ingredient),
+    category: input.category ?? basicCategorize(ingredient),
+    notes: null,
     order: nextOrder,
   });
 
@@ -600,8 +641,7 @@ export async function clearCheckedGroceryItems(groceryListId: string) {
     throw new Error("Not found");
   }
 
-  // Delete all checked items (both manual and recipe items)
-  const result = await db
+  await db
     .delete(groceryListItems)
     .where(
       and(

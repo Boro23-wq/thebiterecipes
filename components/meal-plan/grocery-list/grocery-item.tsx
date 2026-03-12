@@ -20,6 +20,7 @@ type GroceryItemType = {
   ingredient: string;
   amount: string | null;
   unit: string | null;
+  notes: string | null;
   recipeIds: string | null;
   isManual: boolean;
   isChecked: boolean;
@@ -43,9 +44,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
   const [editAmount, setEditAmount] = useState(item.amount || "");
   const [isSaving, setIsSaving] = useState(false);
 
-  const recipes: Array<{ id: string; title: string }> = item.recipeIds
-    ? JSON.parse(item.recipeIds)
-    : [];
+  const recipeIds: string[] = item.recipeIds ? JSON.parse(item.recipeIds) : [];
 
   const handleToggle = async () => {
     try {
@@ -125,9 +124,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           {isEditing ? (
-            // Edit mode
             <div className="flex items-center justify-between gap-3">
-              {/* Left side */}
               <div className="flex items-center gap-3 min-w-0">
                 <Input
                   value={editAmount}
@@ -147,7 +144,6 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                 </span>
               </div>
 
-              {/* Right side buttons */}
               <div className="flex items-center gap-1 shrink-0">
                 <Button
                   onClick={handleSaveEdit}
@@ -169,7 +165,6 @@ export default function GroceryItem({ item }: GroceryItemProps) {
               </div>
             </div>
           ) : (
-            // View mode
             <>
               <p
                 className={cn(
@@ -190,7 +185,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
                 {item.ingredient}
               </p>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center justify-items-start gap-1 shrink-0">
                 {item.amount && !item.isChecked && (
                   <Button
                     onClick={handleStartEdit}
@@ -218,31 +213,16 @@ export default function GroceryItem({ item }: GroceryItemProps) {
           )}
         </div>
 
-        {!isEditing && recipes.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {recipes.slice(0, 2).map((recipe) => (
-              <span
-                key={recipe.id}
-                className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-sm bg-brand-100 text-brand"
-                title={recipe.title}
-              >
-                {recipe.title.length > 20
-                  ? `${recipe.title.substring(0, 20)}...`
-                  : recipe.title}
-              </span>
-            ))}
-            {recipes.length > 2 && (
-              <span
-                className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-sm bg-muted text-muted-foreground"
-                title={recipes
-                  .slice(2)
-                  .map((r) => r.title)
-                  .join(", ")}
-              >
-                +{recipes.length - 2} more
-              </span>
-            )}
-          </div>
+        {/* Notes from Gemini aggregation */}
+        {!isEditing && item.notes && (
+          <p className="text-[11px] text-text-muted mt-1">{item.notes}</p>
+        )}
+
+        {!isEditing && recipeIds.length > 0 && (
+          <span className="inline-flex items-center mt-2 text-[10px] font-medium px-2 py-0.5 rounded-sm bg-brand-100 text-brand">
+            From {recipeIds.length}{" "}
+            {recipeIds.length === 1 ? "recipe" : "recipes"}
+          </span>
         )}
 
         {!isEditing && item.isManual && (
