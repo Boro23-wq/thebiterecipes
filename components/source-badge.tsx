@@ -66,7 +66,7 @@ export function SourceBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-sm bg-brand-100 px-2.5 py-1 text-xs",
+        "flex min-w-0 items-center gap-2 rounded-sm bg-brand-100 px-2.5 py-1 text-xs",
         className,
       )}
       title={raw}
@@ -78,13 +78,14 @@ export function SourceBadge({
           href={raw}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 font-medium text-text-primary hover:underline wrap-break-word"
+          className="flex min-w-0 flex-1 items-center gap-1 font-medium text-text-primary hover:underline"
         >
-          {label}
-          <ExternalLink className="h-3.5 w-3.5 text-text-secondary" />
+          <span className="truncate">{label}</span>
+
+          <ExternalLink className="h-3.5 w-3.5 text-text-secondary shrink-0" />
         </a>
       ) : (
-        <span className="font-medium text-text-primary wrap-break-word">
+        <span className="min-w-0 flex-1 truncate font-medium text-text-primary">
           {label}
         </span>
       )}
