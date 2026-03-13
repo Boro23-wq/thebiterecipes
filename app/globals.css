@@ -3,6 +3,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Container: centered, max 1100px, responsive padding ── */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  max-width: 1100px;
+
+  @media (width >= 640px) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (width >= 1024px) {
+    padding-inline: 2rem;
+  }
+}
+
 @theme inline {
   --color-brand: #ff6b35;
   --color-brand-50: #fffaf7;
@@ -14,10 +29,32 @@
   --color-brand-600: #e55a2a;
   --color-brand-highlight: #fffbf0;
 
+  /* Surface colors (landing page) */
+  --color-surface-1: #fafafa;
+  --color-surface-2: #f5f2ef;
+  --color-surface-3: #eeebe7;
+
   /* Text Colors */
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #666666;
   --color-text-muted: #999999;
+
+  /* Border Colors */
+  --color-border-light: rgba(0, 0, 0, 0.08);
+  --color-border-subtle: rgba(0, 0, 0, 0.09);
+  --color-border-dark: rgba(0, 0, 0, 0.175);
+  --color-border-default: #e5e5e5;
+  --color-border-faint: rgba(0, 0, 0, 0.03);
+
+  /* Border Colors - Brand */
+  --color-border-brand-light: rgba(255, 107, 53, 0.15);
+  --color-border-brand-subtle: rgba(255, 107, 53, 0.25);
+  --color-border-brand-dark: rgba(255, 107, 53, 0.5);
+
+  /* Shadows */
+  --shadow-brand: 0 6px 20px rgba(255, 107, 53, 0.18);
+  --shadow-brand-sm: 0 3px 10px rgba(255, 107, 53, 0.1);
+  --shadow-brand-lg: 0 12px 40px rgba(255, 107, 53, 0.28);
 
   /* Existing theme colors */
   --color-background: var(--background);
@@ -60,72 +97,39 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-
-  /* Border Colors */
-  --color-border-light: rgba(0, 0, 0, 0.08);
-  --color-border-subtle: rgba(0, 0, 0, 0.09);
-  --color-border-dark: rgba(0, 0, 0, 0.175);
-  --color-border-default: #e5e5e5;
-
-  /* Border Colors - Brand */
-  --color-border-brand-light: rgba(255, 107, 53, 0.15); /* Very light orange */
-  --color-border-brand-subtle: rgba(255, 107, 53, 0.25); /* Subtle orange */
-  --color-border-brand-dark: rgba(255, 107, 53, 0.5); /* Darker orange */
 }
 
 :root {
-  /* Border radius - only rounded-md (0.375rem) */
   --radius: 0.375rem;
 
-  /* Background & Foreground */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0 0); /* #1a1a1a */
-
-  /* Card */
+  --foreground: oklch(0.15 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.15 0 0);
-
-  /* Popover */
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-
-  /* Primary - Orange #FF6B35 */
   --primary: oklch(0.68 0.18 35);
   --primary-foreground: oklch(1 0 0);
-
-  /* Secondary - Blue #004E89 */
   --secondary: oklch(0.35 0.12 250);
   --secondary-foreground: oklch(1 0 0);
-
-  /* Muted */
   --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0); /* #666666 */
-
-  /* Accent - Yellow #F7B801 */
+  --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.78 0.16 85);
   --accent-foreground: oklch(100% 0.00011 271.152);
-
-  /* Destructive */
   --destructive: oklch(0.577 0.245 27.325);
-
-  /* Border - Light gray */
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
   --ring: oklch(0.68 0.18 35);
-
-  /* Charts */
-  --chart-1: oklch(0.68 0.18 35); /* Orange */
-  --chart-2: oklch(0.35 0.12 250); /* Blue */
-  --chart-3: oklch(0.78 0.16 85); /* Yellow */
+  --chart-1: oklch(0.68 0.18 35);
+  --chart-2: oklch(0.35 0.12 250);
+  --chart-3: oklch(0.78 0.16 85);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-
-  /* Sidebar */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.68 0.18 35); /* Orange */
+  --sidebar-primary: oklch(0.68 0.18 35);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.98 0.02 35); /* Lightest orange #FFF5F0 */
+  --sidebar-accent: oklch(0.98 0.02 35);
   --sidebar-accent-foreground: oklch(0.15 0 0);
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: oklch(0.68 0.18 35);
@@ -175,10 +179,75 @@
 }
 
 @layer utilities {
+  /* Landing page display text */
+  .text-display-sm {
+    font-size: clamp(2.2rem, 5vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+  .text-display-md {
+    font-size: clamp(2.6rem, 6vw, 4.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+  }
+  .text-display-lg {
+    font-size: clamp(3.2rem, 7vw, 6rem);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+  }
+
+  /* Landing font stack overrides */
+  .font-landing-serif {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+  .font-landing-mono {
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  /* Brand shadow utilities */
+  .shadow-brand {
+    box-shadow: var(--shadow-brand);
+  }
+  .shadow-brand-sm {
+    box-shadow: var(--shadow-brand-sm);
+  }
+  .shadow-brand-lg {
+    box-shadow: var(--shadow-brand-lg);
+  }
+
+  /* Blink animation for cursor */
+  .animate-blink {
+    animation: blink 0.9s step-end infinite;
+  }
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* Pulse dot for badges */
+  .animate-pulse-dot {
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.5);
+      opacity: 0.5;
+    }
+  }
+
   .scroller {
     --gradient-size-start: 0px;
     --gradient-size-end: 0px;
-
     -webkit-mask-image: linear-gradient(
       to right,
       transparent 0,
@@ -193,7 +262,6 @@
       #000 calc(100% - var(--gradient-size-end)),
       transparent 100%
     );
-
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-size: 100% 100%;
@@ -206,6 +274,100 @@
       --gradient-size-end: 25%;
     }
   }
+
+  .scroll-fade-x {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--gradient-size-start),
+      #000 calc(100% - var(--gradient-size-end)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--gradient-size-start),
+      #000 calc(100% - var(--gradient-size-end)),
+      transparent 100%
+    );
+  }
+  .scroll-fade-right {
+    --fade: 26px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      black 0,
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      black 0,
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+  }
+  .scroll-fade-left {
+    --fade: 26px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--fade),
+      black 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--fade),
+      black 100%
+    );
+  }
+  .scroll-fade-y {
+    --fade: 18px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black var(--fade),
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black var(--fade),
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+  }
+  .scroll-fade-bottom {
+    --fade: 18px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black 0,
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      black 0,
+      black calc(100% - var(--fade)),
+      transparent 100%
+    );
+  }
+  .scroll-fade-top {
+    --fade: 18px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black var(--fade),
+      black 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black var(--fade),
+      black 100%
+    );
+  }
 }
 
 /* Scrollbar */
@@ -213,132 +375,22 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
-
 .scrollbar-bite::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 .scrollbar-bite::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .scrollbar-bite::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.22);
   border-radius: 999px;
 }
-
 .scrollbar-bite::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.32);
 }
 
-/* Fade both left + right */
-.scroll-fade-x {
-  /* --fade: 26px; */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 var(--gradient-size-start),
-    #000 calc(100% - var(--gradient-size-end)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 var(--gradient-size-start),
-    #000 calc(100% - var(--gradient-size-end)),
-    transparent 100%
-  );
-}
-
-/* Fade only right (when at start) */
-.scroll-fade-right {
-  --fade: 26px;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    black 0,
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    black 0,
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-}
-
-/* Fade only left (when at end) */
-.scroll-fade-left {
-  --fade: 26px;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black var(--fade),
-    black 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black var(--fade),
-    black 100%
-  );
-}
-
-/* Fade both top + bottom */
-.scroll-fade-y {
-  --fade: 18px;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    black var(--fade),
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    black var(--fade),
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-}
-
-/* Fade only bottom (use when at top) */
-.scroll-fade-bottom {
-  --fade: 18px;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    black 0,
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    black 0,
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
-}
-
-/* Fade only top (use when at bottom) */
-.scroll-fade-top {
-  --fade: 18px;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    black var(--fade),
-    black 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    black var(--fade),
-    black 100%
-  );
-}
-
 [data-sonner-toast] {
-  border-radius: 0.125rem !important; /* rounded-sm */
+  border-radius: 0.125rem !important;
   border-width: 1px !important;
 }

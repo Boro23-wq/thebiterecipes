@@ -411,14 +411,22 @@ function FloatingTimerPanel({
                   const isCurrent = stepIndex === currentStep;
 
                   return (
-                    <button
+                    <div
                       key={stepIndex}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         onGoToStep(stepIndex);
                         setOpen(false);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          onGoToStep(stepIndex);
+                          setOpen(false);
+                        }
+                      }}
                       className={cn(
-                        "w-full flex items-center justify-between px-3 py-2 rounded-sm text-left transition",
+                        "w-full flex items-center justify-between px-3 py-2 rounded-sm text-left transition cursor-pointer select-none",
                         isCurrent
                           ? "bg-brand-100 border border-brand-300"
                           : "hover:bg-brand-50",
@@ -472,7 +480,7 @@ function FloatingTimerPanel({
                           </button>
                         )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

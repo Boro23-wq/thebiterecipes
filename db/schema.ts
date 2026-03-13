@@ -480,3 +480,9 @@ export const cookSessionsRelations = relations(cookSessions, ({ one }) => ({
     references: [recipes.id],
   }),
 }));
+
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
