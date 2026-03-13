@@ -200,6 +200,7 @@ export const recipesRelations = relations(recipes, ({ many }) => ({
   instructions: many(recipeInstructions),
   tags: many(recipeTags),
   images: many(recipeImages),
+  cookSessions: many(cookSessions),
 }));
 
 export const recipeIngredientsRelations = relations(
@@ -364,6 +365,7 @@ export const groceryListItems = pgTable("grocery_list_items", {
   isChecked: boolean("is_checked").default(false).notNull(),
   checkedAt: timestamp("checked_at"),
   category: text("category"),
+  notes: text("notes"), // ← NEW
   order: integer("order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -442,4 +444,45 @@ export const userPreferences = pgTable("user_preferences", {
   recipeReminders: boolean("recipe_reminders").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================
+// COOK SESSIONS (analytics tracking)
+// ============================================
+export const cookSessions = pgTable("cook_sessions", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+  recipeId: uuid("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+
+  // Session tracking
+  status: text("status").notNull(), // "started" | "completed" | "abandoned"
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+
+  // Progress
+  totalSteps: integer("total_steps").notNull(),
+  lastStepReached: integer("last_step_reached").notNull().default(0),
+
+  // Context
+  servingsUsed: integer("servings_used"),
+  durationSeconds: integer("duration_seconds"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const cookSessionsRelations = relations(cookSessions, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [cookSessions.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

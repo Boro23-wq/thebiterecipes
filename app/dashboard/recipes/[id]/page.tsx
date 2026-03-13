@@ -1,7 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { recipes } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, count as drizzleCount } from "drizzle-orm";
+import { cookSessions } from "@/db/schema";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { CategorySelector } from "@/components/category-selector";
 import {
   ArrowLeft,
-  ImagePlus,
-  Star,
+  Flame,
   Edit,
   Share2,
   ChefHat,
@@ -83,6 +83,25 @@ export default async function RecipeDetailPage({
     isSelected: cat.recipeCategories.length > 0,
   }));
 
+  // ================================
+  // COOK STATS FOR THIS RECIPE
+  // ================================
+
+  const [recipeStats] = await db
+    .select({
+      cookCount: sql<number>`count(*)::int`,
+      lastCooked: sql<string>`max(${cookSessions.completedAt})`,
+      avgDuration: sql<number>`coalesce(round(avg(${cookSessions.durationSeconds})), 0)::int`,
+    })
+    .from(cookSessions)
+    .where(
+      and(
+        eq(cookSessions.recipeId, id),
+        eq(cookSessions.userId, user.id),
+        eq(cookSessions.status, "completed"),
+      ),
+    );
+
   // Normalize images so seeded recipes and uploaded images both work
   const heroImages: string[] =
     recipe.images && recipe.images.length > 0
@@ -111,6 +130,17 @@ export default async function RecipeDetailPage({
           </Button>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="brand"
+              size="sm"
+              asChild
+              className="cursor-pointer"
+            >
+              <Link href={`/dashboard/recipes/${recipe.id}/cook`}>
+                <Flame className="h-4 w-4" />
+                Cook
+              </Link>
+            </Button>
             <CategorySelector
               recipeId={recipe.id}
               categories={categoriesWithSelection}
@@ -294,6 +324,44 @@ export default async function RecipeDetailPage({
                     </span>
                   )}
                   {recipe.source && <SourceBadge url={recipe.source} />}
+                </div>
+              )}
+
+              {/* Cook Stats */}
+              {recipeStats.cookCount > 0 && (
+                <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-brand-300">
+                  <div className="flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-brand" />
+                    <span className="text-xs font-medium text-text-primary">
+                      Cooked {recipeStats.cookCount}{" "}
+                      {recipeStats.cookCount === 1 ? "time" : "times"}
+                    </span>
+                  </div>
+
+                  {recipeStats.lastCooked && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-brand-500" />
+                      <span className="text-xs text-text-secondary">
+                        Last cooked{" "}
+                        {new Date(recipeStats.lastCooked).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {recipeStats.avgDuration > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-brand-500" />
+                      <span className="text-xs text-text-secondary">
+                        ~{Math.round(recipeStats.avgDuration / 60)}m avg
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

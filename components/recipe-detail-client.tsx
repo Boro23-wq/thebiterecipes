@@ -11,7 +11,7 @@ import {
   Droplet,
 } from "lucide-react";
 import { CardSm } from "@/components/ui/card-wrapper";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IngredientsList } from "@/components/ingredients-list";
 import { cn } from "@/lib/utils";
 import { text, icon, spacing } from "@/lib/design-tokens";
@@ -50,6 +50,9 @@ export function RecipeDetailClient({
   instructions,
 }: RecipeDetailClientProps) {
   const [servingMultiplier, setServingMultiplier] = useState(1);
+  const [activeTab, setActiveTab] = useState<
+    "ingredients" | "instructions" | "notes"
+  >("ingredients");
 
   const scaledServings = recipe.servings
     ? Math.round(recipe.servings * servingMultiplier)
@@ -173,108 +176,122 @@ export function RecipeDetailClient({
       </section>
 
       {/* Tabs Section */}
-      <Tabs defaultValue="ingredients" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 gap-1.5 rounded-md bg-brand-300 p-1.5">
-          <TabsTrigger
-            value="ingredients"
-            className="data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer"
-          >
-            Ingredients
-          </TabsTrigger>
+      {/* Tab Buttons */}
+      <div className="flex items-center bg-brand-100 rounded-sm p-0.5 w-fit mb-6">
+        <button
+          onClick={() => setActiveTab("ingredients")}
+          className={cn(
+            "px-3 py-1.5 text-xs font-medium rounded-sm transition-all cursor-pointer",
+            activeTab === "ingredients"
+              ? "bg-white text-text-primary shadow-sm"
+              : "text-text-secondary hover:text-text-primary",
+          )}
+        >
+          Ingredients
+        </button>
 
-          <TabsTrigger
-            value="instructions"
-            className="data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer"
-          >
+        <button
+          onClick={() => setActiveTab("instructions")}
+          className={cn(
+            "px-3 py-1.5 text-xs font-medium rounded-sm transition-all cursor-pointer",
+            activeTab === "instructions"
+              ? "bg-white text-text-primary shadow-sm"
+              : "text-text-secondary hover:text-text-primary",
+          )}
+        >
+          Instructions
+        </button>
+
+        <button
+          onClick={() => setActiveTab("notes")}
+          className={cn(
+            "px-3 py-1.5 text-xs font-medium rounded-sm transition-all cursor-pointer",
+            activeTab === "notes"
+              ? "bg-white text-text-primary shadow-sm"
+              : "text-text-secondary hover:text-text-primary",
+          )}
+        >
+          Notes
+        </button>
+      </div>
+
+      {/* Ingredients */}
+      {activeTab === "ingredients" && (
+        <CardSm className="shadow-sm shadow-black/10 p-6">
+          {ingredients.length > 0 ? (
+            <IngredientsList
+              ingredients={ingredients}
+              baseServings={recipe.servings || 4}
+              multiplier={servingMultiplier}
+              onMultiplierChange={setServingMultiplier}
+            />
+          ) : (
+            <>
+              <h3 className={cn(text.h2, "flex items-center gap-2 mb-4")}>
+                <span className="w-1 h-6 bg-brand" />
+                Ingredients
+              </h3>
+              <p className="text-sm text-text-muted italic">
+                No ingredients available for this recipe.
+              </p>
+            </>
+          )}
+        </CardSm>
+      )}
+
+      {/* Instructions */}
+      {activeTab === "instructions" && (
+        <CardSm className="shadow-sm shadow-black/10 p-6">
+          <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
+            <span className="w-1 h-6 bg-brand" />
             Instructions
-          </TabsTrigger>
+          </h3>
 
-          <TabsTrigger
-            value="notes"
-            className="data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer"
-          >
+          {instructions.length > 0 ? (
+            <ol className={spacing.cardLarge}>
+              {instructions.map((inst) => (
+                <li key={inst.id} className="flex gap-4 wrap-break-word">
+                  <span className="shrink-0 w-8 h-8 rounded-sm bg-brand text-white flex items-center justify-center text-sm font-semibold shadow-brand-focus">
+                    {inst.order}
+                  </span>
+                  <span
+                    className={cn(text.body, "flex-1 pt-1 leading-relaxed")}
+                  >
+                    {inst.step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-text-muted italic">
+              No instructions available for this recipe.
+            </p>
+          )}
+        </CardSm>
+      )}
+
+      {/* Notes */}
+      {activeTab === "notes" && (
+        <CardSm className="shadow-sm shadow-black/10 p-6">
+          <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
+            <span className="w-1 h-6 bg-brand" />
             Notes
-          </TabsTrigger>
-        </TabsList>
+          </h3>
 
-        {/* Ingredients Tab */}
-        <TabsContent value="ingredients" className="mt-6">
-          <CardSm className="shadow-sm shadow-black/10 p-6">
-            {ingredients.length > 0 ? (
-              <IngredientsList
-                ingredients={ingredients}
-                baseServings={recipe.servings || 4}
-                multiplier={servingMultiplier}
-                onMultiplierChange={setServingMultiplier}
-              />
-            ) : (
-              <>
-                <h3 className={cn(text.h2, "flex items-center gap-2 mb-4")}>
-                  <span className="w-1 h-6 bg-brand" />
-                  Ingredients
-                </h3>
-                <p className="text-sm text-text-muted italic">
-                  No ingredients available for this recipe.
-                </p>
-              </>
-            )}
-          </CardSm>
-        </TabsContent>
-
-        {/* Instructions Tab */}
-        <TabsContent value="instructions" className="mt-6">
-          <CardSm className="border border-border-brand-light p-6">
-            <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
-              <span className="w-1 h-6 bg-brand" />
-              Instructions
-            </h3>
-            {instructions.length > 0 ? (
-              <ol className={spacing.cardLarge}>
-                {instructions.map((inst) => (
-                  <li key={inst.id} className="flex gap-4 wrap-break-word">
-                    <span className="shrink-0 w-8 h-8 rounded-sm bg-brand text-white flex items-center justify-center text-sm font-semibold shadow-brand-focus">
-                      {inst.order}
-                    </span>
-                    <span
-                      className={cn(text.body, "flex-1 pt-1 leading-relaxed")}
-                    >
-                      {inst.step}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-sm text-text-muted italic">
-                No instructions available for this recipe.
-              </p>
-            )}
-          </CardSm>
-        </TabsContent>
-
-        {/* Notes Tab */}
-        <TabsContent value="notes" className="mt-6">
-          <CardSm className="border border-border-brand-light p-6">
-            <h3 className={cn(text.h2, "mb-8 flex items-center gap-2")}>
-              <span className="w-1 h-6 bg-brand" />
-              Notes
-            </h3>
-            {recipe.notes ? (
-              <p
-                className={cn(
-                  text.body,
-                  "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap wrap-break-word",
-                )}
-              >
-                {recipe.notes}
-              </p>
-            ) : (
-              <p className="text-sm text-text-muted italic">
-                No notes added yet
-              </p>
-            )}
-          </CardSm>
-        </TabsContent>
-      </Tabs>
+          {recipe.notes ? (
+            <p
+              className={cn(
+                text.body,
+                "leading-relaxed bg-brand-100 p-4 rounded-sm whitespace-pre-wrap wrap-break-word",
+              )}
+            >
+              {recipe.notes}
+            </p>
+          ) : (
+            <p className="text-sm text-text-muted italic">No notes added yet</p>
+          )}
+        </CardSm>
+      )}
     </>
   );
 }

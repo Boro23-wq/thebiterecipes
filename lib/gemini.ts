@@ -19,6 +19,15 @@ export interface GeminiParsedRecipe {
   notes?: string;
 }
 
+export interface GeminiGroceryItem {
+  ingredient: string;
+  amount: string;
+  unit: string;
+  category: "produce" | "meat" | "dairy" | "pantry" | "other";
+  notes: string | null;
+  sourceIngredients: string[];
+}
+
 const RECIPE_PARSE_PROMPT = `You are a recipe extraction assistant. Given raw text from a social media post (caption, transcript, or description), extract a structured recipe.
 
 Rules:
@@ -49,6 +58,52 @@ Return this JSON shape:
   "instructions": ["array of strings"],
   "notes": "string or omit"
 }`;
+
+const GROCERY_AGGREGATE_PROMPT = `You are a smart grocery shopping assistant. Given raw recipe ingredients from multiple recipes (with serving multipliers already applied), produce a consolidated, shopper-friendly grocery list.
+ 
+CRITICAL RULES:
+ 
+1. PRESERVE UNITS — Never drop units. "1 1/2 lbs ground lamb" must become amount:"1.5", unit:"lbs", ingredient:"ground lamb". If no unit is present (e.g. "2 tomatoes"), use unit:"" and keep the amount.
+ 
+2. AGGREGATE SAME INGREDIENTS — Combine items that are the same base ingredient:
+   - "1 onion" + "1 small white onion" + "1 grated onion" → amount:"3", unit:"", ingredient:"onions", notes:"includes 1 small white, 1 for grating"
+   - "2 tbsp butter" + "1/4 cup butter" → convert to same unit and sum, e.g. amount:"6", unit:"tbsp", ingredient:"unsalted butter"
+   - Do NOT merge ingredients that are genuinely different (e.g. "green onion" and "yellow onion" stay separate)
+ 
+3. UNIT CONVERSION — When the same ingredient appears with different units:
+   - Convert to the more common shopping unit (e.g. cups > tbsp for large amounts, lbs > oz for meat)
+   - "3 tbsp olive oil" + "1/4 cup olive oil" → amount:"7", unit:"tbsp", ingredient:"olive oil"
+ 
+4. BUYABLE QUANTITIES — Round up to realistic purchase amounts:
+   - "1/4 cup yogurt" → amount:"1", unit:"container", ingredient:"plain whole-milk yogurt", notes:"only 1/4 cup needed"
+   - "2 tbsp tomato paste" → amount:"1", unit:"small can", ingredient:"tomato paste", notes:"only 2 tbsp needed"
+   - Staples like flour, sugar, oil — if user likely already has them, note it: notes:"pantry staple, 2 tbsp needed"
+   - Produce: keep exact counts (e.g. "3 lemons", not "1 bag lemons")
+ 
+5. TO-TASTE ITEMS — "salt", "pepper", "water", items listed as "to taste" or "pinch of":
+   - List once with amount:"", unit:"", notes:"to taste"
+ 
+6. NORMALIZE NAMES — Clean up ingredient names for shopping:
+   - "fresh cilantro leaves, chopped" → "fresh cilantro"
+   - "boneless skinless chicken thighs" → "boneless skinless chicken thighs" (keep specifics that matter for buying)
+   - Remove preparation words: "diced", "minced", "grated", "chopped", "sliced" — but keep them in notes if relevant
+ 
+7. CATEGORY — Must be exactly one of: "produce", "meat", "dairy", "pantry", "other"
+   - produce: fruits, vegetables, fresh herbs
+   - meat: all proteins including fish, seafood, tofu
+   - dairy: milk, cheese, yogurt, butter, eggs
+   - pantry: oils, spices, flour, sugar, canned goods, sauces, grains, pasta, rice
+   - other: anything else
+ 
+8. sourceIngredients — Include the EXACT original strings so user can trace back. This is critical for debugging.
+ 
+Return ONLY a valid JSON array. No markdown, no backticks, no explanation. Example:
+[
+  {"ingredient":"ground lamb","amount":"1.5","unit":"lbs","category":"meat","notes":null,"sourceIngredients":["1 1/2 lbs ground lamb"]},
+  {"ingredient":"onions","amount":"3","unit":"","category":"produce","notes":"includes 1 small white, 1 for grating","sourceIngredients":["1 onion","1 small white onion","1 grated onion"]},
+  {"ingredient":"plain whole-milk yogurt","amount":"1","unit":"container","category":"dairy","notes":"only 1/4 cup needed","sourceIngredients":["1/4 cup plain whole-milk yogurt"]},
+  {"ingredient":"salt","amount":"","unit":"","category":"pantry","notes":"to taste","sourceIngredients":["salt to taste","pinch of salt"]}
+]`;
 
 /**
  * Parse recipe from screenshot images using Gemini Vision
@@ -258,4 +313,96 @@ export async function parseRecipeWithGemini(
 
     return null;
   }
+}
+
+export async function aggregateGroceryWithGemini(
+  recipeIngredients: Array<{
+    recipeName: string;
+    servingsMultiplier: number;
+    ingredients: Array<{ amount: string | null; ingredient: string }>;
+  }>,
+): Promise<GeminiGroceryItem[]> {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+  // Build input: scale amounts by multiplier and format for Gemini
+  const input = recipeIngredients.map((recipe) => ({
+    recipe: recipe.recipeName,
+    ingredients: recipe.ingredients.map((ing) => {
+      const raw = `${ing.amount || ""} ${ing.ingredient}`.trim();
+      if (recipe.servingsMultiplier !== 1 && ing.amount) {
+        return `${raw} (x${recipe.servingsMultiplier} servings)`;
+      }
+      return raw;
+    }),
+  }));
+
+  const userMessage = `Here are all ingredients from ${recipeIngredients.length} recipes to consolidate into a grocery list:\n\n${JSON.stringify(input, null, 2)}`;
+
+  const runGemini = async (): Promise<GeminiGroceryItem[]> => {
+    const result = await model.generateContent(
+      `${GROCERY_AGGREGATE_PROMPT}\n\n${userMessage}`,
+    );
+
+    const text = result.response.text().trim();
+    const cleaned = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("Gemini did not return an array");
+    }
+
+    // Validate and sanitize each item
+    return parsed
+      .filter(
+        (item: Record<string, unknown>) =>
+          item.ingredient && typeof item.ingredient === "string",
+      )
+      .map((item: Record<string, unknown>) => ({
+        ingredient: String(item.ingredient).trim(),
+        amount: String(item.amount ?? "").trim(),
+        unit: String(item.unit ?? "").trim(),
+        category: validateCategory(String(item.category ?? "other")),
+        notes: item.notes ? String(item.notes).trim() : null,
+        sourceIngredients: Array.isArray(item.sourceIngredients)
+          ? item.sourceIngredients.map(String)
+          : [],
+      }));
+  };
+
+  try {
+    return await runGemini();
+  } catch (error: unknown) {
+    console.error("Gemini grocery aggregation failed:", error);
+
+    if (error instanceof Error && error.message.includes("429")) {
+      console.log("Retrying Gemini after rate limit...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      try {
+        return await runGemini();
+      } catch {
+        throw new Error(
+          "AI is temporarily rate limited. Please try again in a minute.",
+        );
+      }
+    }
+
+    // If Gemini fails entirely, throw so the action can handle it
+    throw new Error("Failed to generate grocery list with AI. Please retry.");
+  }
+}
+
+function validateCategory(
+  cat: string,
+): "produce" | "meat" | "dairy" | "pantry" | "other" {
+  const valid = ["produce", "meat", "dairy", "pantry", "other"] as const;
+  const lower = cat.toLowerCase().trim();
+  return valid.includes(lower as (typeof valid)[number])
+    ? (lower as (typeof valid)[number])
+    : "other";
 }

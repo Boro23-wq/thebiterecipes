@@ -129,46 +129,35 @@ export function IngredientsList({
           Ingredients
         </h3>
 
-        <div className="flex items-center gap-1 bg-brand-100 rounded-sm p-1">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onMultiplierChange(0.5)}
-            className={cn(
-              "px-4 py-1.5 rounded-sm text-sm font-medium transition-all cursor-pointer",
-              multiplier === 0.5
-                ? "bg-brand text-white shadow-sm"
-                : "text-text-secondary hover:text-text-primary",
-            )}
+            onClick={() => onMultiplierChange(Math.max(0.25, multiplier - 0.5))}
+            className="w-8 h-8 flex items-center justify-center rounded-sm bg-brand-100 text-brand hover:bg-brand-200 transition-colors active:scale-90 cursor-pointer text-lg font-medium"
           >
-            1/2x
+            −
           </button>
+          <span className="text-sm font-semibold text-text-primary w-16 text-center tabular-nums">
+            {Math.round(baseServings * multiplier)}{" "}
+            {Math.round(baseServings * multiplier) === 1 ? "srv" : "srvs"}
+          </span>
           <button
-            onClick={() => onMultiplierChange(1)}
-            className={cn(
-              "px-4 py-1.5 rounded-sm text-sm font-medium transition-all cursor-pointer",
-              multiplier === 1
-                ? "bg-brand text-white shadow-sm"
-                : "text-text-secondary hover:text-text-primary",
-            )}
+            onClick={() => onMultiplierChange(Math.min(10, multiplier + 0.5))}
+            className="w-8 h-8 flex items-center justify-center rounded-sm bg-brand-100 text-brand hover:bg-brand-200 transition-colors active:scale-90 cursor-pointer text-lg font-medium"
           >
-            1x
-          </button>
-          <button
-            onClick={() => onMultiplierChange(2)}
-            className={cn(
-              "px-4 py-1.5 rounded-sm text-sm font-medium transition-all cursor-pointer",
-              multiplier === 2
-                ? "bg-brand text-white shadow-sm"
-                : "text-text-secondary hover:text-text-primary",
-            )}
-          >
-            2x
+            +
           </button>
         </div>
       </div>
 
       {/* Servings indicator */}
       <p className="text-sm text-text-muted mb-4">
-        Original recipe makes {baseServings} servings
+        Original: {baseServings} servings
+        {multiplier !== 1 && (
+          <span className="text-brand font-medium">
+            {" "}
+            · Scaled {multiplier}x
+          </span>
+        )}
       </p>
 
       {/* Ingredients list */}

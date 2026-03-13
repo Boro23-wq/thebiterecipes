@@ -4,13 +4,26 @@ import { db } from "@/db";
 import { onboardingProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"]);
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/auth", // hidden admin entry point
+]);
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const { pathname } = request.nextUrl;
 
-  // Prevent logged in users from visiting auth pages
+  // /auth → redirect to sign-in (or dashboard if already logged in)
+  if (pathname === "/auth") {
+    if (userId) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+
+  // Prevent logged-in users from visiting auth pages
   if (
     userId &&
     (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up"))
@@ -31,17 +44,15 @@ export default clerkMiddleware(async (auth, request) => {
 
       const onboardingCompleted = profile?.onboardingCompleted;
 
-      // If onboarding NOT completed → force onboarding
       if (!onboardingCompleted && pathname.startsWith("/dashboard")) {
         return NextResponse.redirect(new URL("/onboarding", request.url));
       }
 
-      // If onboarding completed → block onboarding page
       if (onboardingCompleted && pathname.startsWith("/onboarding")) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     } catch {
-      // Fail open — don't block users if DB fails
+      // Fail open
     }
   }
 });

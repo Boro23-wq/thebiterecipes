@@ -160,10 +160,16 @@ export function RecipeImagesPickerSlots({
   }
 
   async function onMultiChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []).slice(0, 3);
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
 
-    for (const f of files) {
+    const emptySlotIndexes = slots
+      .map((s, i) => (!s.uploadedUrl ? i : null))
+      .filter((v): v is number => v !== null);
+
+    const filesToUpload = files.slice(0, emptySlotIndexes.length);
+
+    for (const f of filesToUpload) {
       const err = validateFile(f);
       if (err) {
         alert(err);
@@ -173,26 +179,15 @@ export function RecipeImagesPickerSlots({
 
     setClearedSlots([]);
 
-    for (let i = 0; i < files.length; i++) {
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const slotIndex = emptySlotIndexes[i];
+
       try {
-        await uploadFileToSlot(i, files[i]);
+        await uploadFileToSlot(slotIndex, filesToUpload[i]);
       } catch (e) {
         alert(e instanceof Error ? e.message : "Upload failed.");
         return;
       }
-    }
-
-    if (files.length < 3) {
-      setSlots((prev) => {
-        const next = [...prev];
-        for (let i = files.length; i < 3; i++) {
-          if (next[i]?.previewUrl?.startsWith("blob:")) {
-            URL.revokeObjectURL(next[i].previewUrl!);
-          }
-          next[i] = { previewUrl: null, uploadedUrl: null, isUploading: false };
-        }
-        return next;
-      });
     }
   }
 
@@ -234,6 +229,8 @@ export function RecipeImagesPickerSlots({
   }, []);
 
   const isAnyUploading = slots.some((s) => s.isUploading);
+  const emptySlots = slots.filter((s) => !s.uploadedUrl).length;
+  const maxSelectable = emptySlots === 0 ? 0 : emptySlots;
 
   return (
     <div className="w-full">
@@ -249,6 +246,7 @@ export function RecipeImagesPickerSlots({
           <Button
             type="button"
             variant="outline"
+            disabled={emptySlots === 0}
             onClick={() => multiInputRef.current?.click()}
             className="text-xs cursor-pointer w-full sm:w-auto whitespace-nowrap"
           >
@@ -364,7 +362,7 @@ export function RecipeImagesPickerSlots({
         ref={multiInputRef}
         type="file"
         accept="image/*"
-        multiple
+        multiple={emptySlots > 1}
         className="hidden"
         onChange={onMultiChange}
       />

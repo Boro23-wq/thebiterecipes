@@ -27,6 +27,7 @@ type GroceryListItem = {
   checkedAt: Date | null;
   category: string | null;
   order: number;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
