@@ -9,6 +9,7 @@ import {
   LogOut,
   CalendarPlus,
   ChevronRight,
+  Package,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -65,6 +66,11 @@ const bottomItems = [
     title: "Create Meal Plan",
     url: "/dashboard/meal-plan",
     icon: CalendarPlus,
+  },
+  {
+    title: "Pantry",
+    url: "/dashboard/pantry",
+    icon: Package,
   },
   {
     title: "Favorites",
