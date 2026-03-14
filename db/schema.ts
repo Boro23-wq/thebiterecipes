@@ -181,6 +181,34 @@ export const seedRecipeIngredients = pgTable("seed_recipe_ingredients", {
   order: integer("order").notNull(),
 });
 
+export const pantryItems = pgTable("pantry_items", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull(),
+
+  // Item details
+  name: text("name").notNull(),
+  category: text("category").notNull(), // "produce" | "meat" | "dairy" | "pantry" | "frozen" | "other"
+  amount: text("amount"),
+  unit: text("unit"),
+
+  // Expiration tracking
+  expirationDate: timestamp("expiration_date"),
+  isExpired: boolean("is_expired").default(false).notNull(),
+
+  // Source tracking (how it got into pantry)
+  source: text("source").default("manual").notNull(), // "manual" | "grocery" | "voice" | "ai"
+  groceryItemId: text("grocery_item_id").references(() => groceryListItems.id, {
+    onDelete: "set null",
+  }),
+
+  // Metadata
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Seed recipe instructions
 export const seedRecipeInstructions = pgTable("seed_recipe_instructions", {
   id: serial("id").primaryKey(),
@@ -189,6 +217,12 @@ export const seedRecipeInstructions = pgTable("seed_recipe_instructions", {
     .notNull(),
   step: text("step").notNull(),
   order: integer("order").notNull(),
+});
+
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -270,10 +304,6 @@ export const seedRecipeInstructionsRelations = relations(
     }),
   }),
 );
-
-// ============================================
-// EXISTING TABLES (unchanged)
-// ============================================
 
 export const categories = pgTable("categories", {
   id: text("id")
@@ -446,9 +476,17 @@ export const userPreferences = pgTable("user_preferences", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const pantryItemsRelations = relations(pantryItems, ({ one }) => ({
+  groceryItem: one(groceryListItems, {
+    fields: [pantryItems.groceryItemId],
+    references: [groceryListItems.id],
+  }),
+}));
+
 // ============================================
 // COOK SESSIONS (analytics tracking)
 // ============================================
+
 export const cookSessions = pgTable("cook_sessions", {
   id: text("id")
     .primaryKey()
@@ -480,9 +518,3 @@ export const cookSessionsRelations = relations(cookSessions, ({ one }) => ({
     references: [recipes.id],
   }),
 }));
-
-export const waitlist = pgTable("waitlist", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});

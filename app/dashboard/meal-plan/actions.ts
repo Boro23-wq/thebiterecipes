@@ -421,6 +421,18 @@ export async function toggleGroceryItem(itemId: string) {
     })
     .where(eq(groceryListItems.id, itemId));
 
+  // Auto-add to pantry when checked off
+  if (newChecked) {
+    try {
+      const { addGroceryItemToPantry } =
+        await import("@/app/dashboard/pantry/actions");
+      await addGroceryItemToPantry(itemId);
+    } catch (error) {
+      // Don't fail the toggle if pantry add fails
+      console.error("Failed to auto-add to pantry:", error);
+    }
+  }
+
   revalidatePath("/dashboard/meal-plan");
 }
 
