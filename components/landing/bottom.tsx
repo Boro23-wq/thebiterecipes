@@ -14,22 +14,14 @@ export default function Bottom() {
           viewport={{ once: true }}
           transition={{ duration: 0.55 }}
         >
-          <div
-            className="flex items-center justify-center gap-3 mb-8 text-xs text-text-muted"
-            style={{ fontFamily: "var(--font-jetbrains)" }}
-          >
-            <div className="h-px w-10 bg-border-subtle" />
-            <span>bite / early access</span>
-            <div className="h-px w-10 bg-border-subtle" />
-          </div>
+          <p className="text-xs uppercase tracking-widest text-text-muted font-medium mb-4">
+            Early access
+          </p>
 
-          <h2
-            className="text-display-md font-black mb-5"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
+          <h2 className="text-display-sm font-extrabold tracking-tight mb-6">
             Stop screenshotting recipes.
             <br />
-            <em className="text-brand not-italic">Start collecting them.</em>
+            <span className="text-brand">Start cooking them.</span>
           </h2>
 
           <p className="text-text-secondary max-w-md mx-auto leading-relaxed mb-10 text-sm md:text-base">
@@ -46,20 +38,15 @@ export default function Bottom() {
       {/* Footer */}
       <footer className="border-t border-border-light py-5">
         <div className="container flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2">
-            <span
-              className="font-bold text-base"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Bite
-            </span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/20 bg-brand/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse-dot" />
+          <span className="font-bold text-base">Bite</span>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
             <span className="text-xs font-semibold text-brand tracking-wide">
               Powered by Gemini 2.5 Flash
             </span>
           </div>
+
           <span className="text-sm text-text-muted">© 2026 Bite</span>
         </div>
       </footer>

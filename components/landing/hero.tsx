@@ -59,44 +59,36 @@ function useTyped(
 
 export default function Hero() {
   const [joined, setJoined] = useState(false);
-
   const typed = useTyped(WORDS);
 
   return (
-    <section className="container pt-16 pb-14 md:pt-24 md:pb-20">
+    <section className="container pt-20 pb-16 md:pt-32 md:pb-24">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        className="max-w-3xl"
       >
-        {/* Overline */}
-        <div
-          className="flex items-center gap-3 mb-7 text-xs text-text-muted"
-          style={{ fontFamily: "var(--font-jetbrains)" }}
-        >
-          <span>bite / 0.1</span>
-          <div className="h-px w-8 bg-border-subtle" />
-          <span className="uppercase tracking-widest">Early access</span>
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5 mb-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+          <span className="text-xs font-semibold text-brand tracking-wide">
+            Early access coming soon
+          </span>
         </div>
 
         {/* Headline */}
-        <h1
-          className="text-display-md font-black mb-1"
-          style={{ fontFamily: "var(--font-playfair)" }}
-        >
+        <h1 className="text-display-sm font-extrabold tracking-tight mb-1">
           Save recipes from
         </h1>
-        <h1
-          className="text-display-md font-black mb-6 flex items-baseline flex-wrap"
-          style={{ fontFamily: "var(--font-playfair)" }}
-        >
-          <em className="text-brand not-italic">{typed}</em>
-          <span className="text-brand animate-blink ml-0.5">|</span>
+        <h1 className="text-display-sm font-extrabold tracking-tight mb-8 flex items-baseline flex-wrap">
+          <span className="text-brand">{typed}</span>
+          <span className="text-brand opacity-80 ml-0.5 font-light">|</span>
         </h1>
 
-        <p className="text-base md:text-lg text-text-secondary max-w-lg leading-relaxed mb-6">
-          Paste any link — Bite&apos;s AI, powered by Gemini, extracts every
-          ingredient, step and timing. Your recipe life, organized in seconds.
+        <p className="text-base md:text-lg text-text-secondary max-w-lg leading-relaxed mb-8">
+          Paste any link — Bite&apos;s AI extracts every ingredient, step, and
+          timing. Your recipe collection, organized in seconds.
         </p>
 
         {/* CTA */}
@@ -111,7 +103,7 @@ export default function Hero() {
         </div>
 
         {/* Stats strip */}
-        <div className="flex justify-between mt-14 pt-10 border-t border-border-light">
+        <div className="flex gap-12 md:gap-16 mt-16 pt-10 border-t border-border-light">
           {[
             { val: "100+", label: "Recipe sites" },
             { val: "<5s", label: "Avg import" },
@@ -124,10 +116,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + i * 0.07 }}
             >
-              <p
-                className="font-black text-3xl tracking-tight mb-1"
-                style={{ fontFamily: "var(--font-playfair)" }}
-              >
+              <p className="font-extrabold text-3xl tracking-tight mb-1">
                 {s.val}
               </p>
               <p className="text-xs text-text-muted">{s.label}</p>

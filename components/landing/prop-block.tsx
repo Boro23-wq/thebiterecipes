@@ -7,18 +7,16 @@ import { ReactNode } from "react";
 // ─── SHARED SECTION WRAPPER ───────────────────────────────────────────────────
 
 function Section({
-  number,
   eyebrow,
   headline,
-  italic,
+  accent,
   body,
   reverse,
   children,
 }: {
-  number: number;
   eyebrow: string;
   headline: string;
-  italic?: string;
+  accent?: string;
   body: string;
   reverse?: boolean;
   children: ReactNode;
@@ -33,12 +31,11 @@ function Section({
     >
       {/* Text */}
       <div className={reverse ? "md:order-2" : ""}>
-        <p className="text-[10px] uppercase tracking-[0.14em] text-text-muted font-mono mb-4">
-          0{number} · {eyebrow}
+        <p className="text-xs uppercase tracking-widest text-text-muted font-medium mb-4">
+          {eyebrow}
         </p>
-        <h3 className="font-serif font-black text-3xl md:text-4xl tracking-tight leading-[1.1] mb-4">
-          {headline}{" "}
-          {italic && <em className="text-brand not-italic">{italic}</em>}
+        <h3 className="font-extrabold text-3xl md:text-4xl tracking-tight leading-[1.1] mb-4">
+          {headline} {accent && <span className="text-brand">{accent}</span>}
         </h3>
         <p className="text-text-secondary leading-relaxed text-sm md:text-base">
           {body}
@@ -167,8 +164,8 @@ function CookModeStrip() {
       <div className="p-5">
         {/* Header row */}
         <div className="flex items-center justify-between mb-4">
-          <span className="text-xs text-text-muted font-mono">
-            Step {step + 1} / {COOK_STEPS.length}
+          <span className="text-xs text-text-muted font-medium">
+            Step {step + 1} of {COOK_STEPS.length}
           </span>
           <div className="flex gap-1">
             {COOK_STEPS.map((_, i) => (
@@ -192,7 +189,7 @@ function CookModeStrip() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="font-serif font-bold text-lg md:text-xl leading-snug mb-5"
+            className="font-bold text-lg md:text-xl leading-snug mb-5"
           >
             {COOK_STEPS[step]}
           </motion.p>
@@ -255,7 +252,7 @@ function MealPlanStrip() {
                 : "bg-surface-3 border-border-light"
             }`}
           >
-            <p className="text-[9px] uppercase tracking-widest text-text-muted font-mono">
+            <p className="text-[9px] uppercase tracking-widest text-text-muted">
               {m.day}
             </p>
             {m.name ? (
@@ -308,9 +305,7 @@ function RecipeGrid() {
           className="bg-surface-2 border border-border-light rounded-sm p-4"
         >
           <div className="flex items-start justify-between gap-2 mb-2.5">
-            <p className="font-serif font-bold text-sm leading-snug">
-              {r.name}
-            </p>
+            <p className="font-bold text-sm leading-snug">{r.name}</p>
             <span className="text-[9px] shrink-0 font-bold text-brand bg-brand/10 border border-brand/20 rounded-sm px-1.5 py-0.5">
               saved
             </span>
@@ -343,20 +338,18 @@ export default function PropBlocks() {
   return (
     <>
       <Section
-        number={1}
         eyebrow="Universal import"
         headline="Paste anything."
-        italic="It just works."
+        accent="It just works."
         body="Recipe websites, TikTok videos, YouTube tutorials, Instagram screenshots — Bite handles all of them. JSON-LD for structured sites, Gemini Vision for social media that doesn't expose data. One URL in, clean recipe out."
       >
         <SourceGrid />
       </Section>
 
       <Section
-        number={2}
         eyebrow="AI extraction"
         headline="Gemini reads the"
-        italic="whole video."
+        accent="whole video."
         body="Most importers scrape text. Bite uses Gemini 2.5 Flash to understand context — reading transcripts, parsing caption ingredients, interpreting ambiguous cooking instructions. No manual entry. Ever."
         reverse
       >
@@ -364,20 +357,18 @@ export default function PropBlocks() {
       </Section>
 
       <Section
-        number={3}
         eyebrow="Cook mode"
         headline="Your phone stays"
-        italic="in your pocket."
+        accent="in your pocket."
         body="Cook Mode takes over your screen — large steps, per-step countdown timers, voice commands, Wake Lock so the screen stays on. Auto-advance when the timer ends."
       >
         <CookModeStrip />
       </Section>
 
       <Section
-        number={4}
         eyebrow="Meal planning"
         headline="Plan the week."
-        italic="Skip the thinking."
+        accent="Skip the thinking."
         body="Drag saved recipes onto a weekly calendar. Bite aggregates every ingredient across all planned meals into a single grocery list. No duplicates, no mental math."
         reverse
       >
@@ -385,10 +376,9 @@ export default function PropBlocks() {
       </Section>
 
       <Section
-        number={5}
         eyebrow="Your collection"
         headline="Every recipe,"
-        italic="organized."
+        accent="organized."
         body="Categories, favorites, search, filters, infinite scroll. 61 hand-curated starter recipes seeded on signup based on your taste preferences. Yours, instantly searchable."
       >
         <RecipeGrid />
