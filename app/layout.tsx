@@ -51,7 +51,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           {children}
-          <Toaster richColors position="top-right" />
+          <Toaster position="top-center" />
         </ClerkProvider>
         <script
           dangerouslySetInnerHTML={{
@@ -68,3 +68,7 @@ export default function RootLayout({
     </html>
   );
 }
+
+// industry -> market components -> key segments what company focuses on
+
+// outline

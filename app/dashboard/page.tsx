@@ -10,6 +10,7 @@ import { StatsCard } from "@/components/ui/card-wrapper";
 import { getCookingStats } from "@/app/dashboard/actions";
 import { Flame, TrendingUp, Trophy, ChefHat } from "lucide-react";
 import { CookingStatsChart } from "@/components/cooking-stats-chart";
+import RecipeDiscovery from "@/components/recipe-discovery";
 import { BookOpen, Plus, Heart, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { spacing, text, layout, icon } from "@/lib/design-tokens";
@@ -173,6 +174,14 @@ export default async function DashboardPage() {
             </Link>
           </Button>
         </div>
+      </div>
+
+      {/* ================================
+          RECIPE DISCOVERY
+      ================================= */}
+
+      <div className={spacing.card}>
+        <RecipeDiscovery />
       </div>
 
       {/* ================================

@@ -2,8 +2,29 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { cookSessions, recipes } from "@/db/schema";
-import { eq, and, desc, sql, gte } from "drizzle-orm";
+import {
+  cookSessions,
+  recipes,
+  recipeIngredients,
+  recipeInstructions,
+} from "@/db/schema";
+import { eq, and, sql, gte } from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
+
+interface DiscoveryImport {
+  title: string;
+  description?: string;
+  servings?: number;
+  prepTime?: number;
+  cookTime?: number;
+  cuisine?: string;
+  category?: string;
+  calories?: number;
+  protein?: number;
+  imageUrl?: string;
+  ingredients: Array<string | { amount?: string; name: string }>;
+  instructions: string[];
+}
 
 export async function getCookingStats() {
   const { userId } = await auth();
@@ -91,4 +112,69 @@ export async function getCookingStats() {
     mostCooked,
     dailyActivity,
   };
+}
+
+export async function importRecipeFromDiscovery(data: DiscoveryImport) {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const totalTime =
+    data.prepTime && data.cookTime
+      ? data.prepTime + data.cookTime
+      : (data.cookTime ?? data.prepTime ?? undefined);
+
+  const [recipe] = await db
+    .insert(recipes)
+    .values({
+      userId: user.id,
+      title: data.title,
+      description: data.description,
+      servings: data.servings,
+      prepTime: data.prepTime,
+      cookTime: data.cookTime,
+      totalTime,
+      cuisine: data.cuisine,
+      category: data.category,
+      imageUrl: data.imageUrl,
+      calories: data.calories,
+      protein: data.protein,
+      source: "AI Discovery",
+      isSeeded: false,
+    })
+    .returning({ id: recipes.id });
+
+  if (data.ingredients.length > 0) {
+    await db.insert(recipeIngredients).values(
+      data.ingredients.map((ing, idx) => {
+        if (typeof ing === "string") {
+          // Saved/seed recipes come as strings
+          return {
+            recipeId: recipe.id,
+            ingredient: ing,
+            amount: null,
+            order: idx,
+          };
+        }
+        // AI recipes come as { amount, name }
+        return {
+          recipeId: recipe.id,
+          ingredient: ing.name,
+          amount: ing.amount || null,
+          order: idx,
+        };
+      }),
+    );
+  }
+
+  if (data.instructions.length > 0) {
+    await db.insert(recipeInstructions).values(
+      data.instructions.map((step, idx) => ({
+        recipeId: recipe.id,
+        step,
+        order: idx,
+      })),
+    );
+  }
+
+  return { id: recipe.id };
 }

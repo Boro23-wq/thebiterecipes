@@ -166,24 +166,25 @@ export default function GroceryItem({ item }: GroceryItemProps) {
             </div>
           ) : (
             <>
-              <p
+              <div
                 className={cn(
-                  "text-sm font-medium leading-tight line-clamp-2 wrap-break-word",
+                  "flex items-start flex-wrap text-sm font-medium leading-tight wrap-break-word gap-x-1",
                   item.isChecked && "line-through",
                 )}
               >
                 {item.amount && (
-                  <button
+                  <span
+                    role="button"
                     onClick={handleStartEdit}
-                    className="text-brand mr-1 font-semibold hover:underline cursor-pointer"
-                    disabled={item.isChecked}
+                    className="text-brand font-semibold cursor-pointer hover:underline"
                   >
                     {item.amount}
-                    {item.unit ? ` ${item.unit}` : ""}{" "}
-                  </button>
+                    {item.unit ? ` ${item.unit}` : ""}
+                  </span>
                 )}
-                {item.ingredient}
-              </p>
+
+                <span className="min-w-0">{item.ingredient}</span>
+              </div>
 
               <div className="flex items-center justify-items-start gap-1 shrink-0">
                 {item.amount && !item.isChecked && (
@@ -215,7 +216,7 @@ export default function GroceryItem({ item }: GroceryItemProps) {
 
         {/* Notes from Gemini aggregation */}
         {!isEditing && item.notes && (
-          <p className="text-[11px] text-text-muted mt-1">{item.notes}</p>
+          <p className="text-[11px] text-text-muted mt-0.5">{item.notes}</p>
         )}
 
         {!isEditing && recipeIds.length > 0 && (

@@ -29,16 +29,16 @@ export default function GeminiSection() {
         >
           {/* Gemini badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse-dot" />
+            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
             <span className="text-xs font-semibold text-brand tracking-wide">
               Powered by Gemini 2.5 Flash
             </span>
           </div>
 
-          <h2 className="font-serif font-black text-3xl md:text-5xl tracking-tight leading-[1.08] mb-5">
+          <h2 className="font-extrabold text-3xl md:text-5xl tracking-tight leading-[1.08] mb-5">
             Not a scraper.
             <br />
-            <em className="text-brand not-italic">A reader.</em>
+            <span className="text-brand">A reader.</span>
           </h2>
 
           <p className="text-text-secondary leading-relaxed text-sm md:text-base mb-7">
