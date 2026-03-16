@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Loader2, Clock } from "lucide-react";
+import { ArrowRight, Loader2, Clock, ChefHat } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -112,7 +112,11 @@ export default function WhatCanICook({
                         />
                       </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-sm bg-brand-100 flex items-center justify-center shrink-0" />
+                      <div className="w-16 h-16 rounded-sm bg-linear-to-br from-brand-200 to-brand-300 flex items-center justify-center shrink-0">
+                        <div className="flex flex-col items-center leading-none">
+                          <ChefHat className="w-4 h-4 text-brand/40" />
+                        </div>
+                      </div>
                     )}
 
                     {/* Content */}
@@ -128,10 +132,10 @@ export default function WhatCanICook({
 
                       {/* Match bar */}
                       <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-brand-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-brand-100 rounded-sm overflow-hidden">
                           <div
                             className={cn(
-                              "h-full rounded-full transition-all",
+                              "h-full rounded-sm transition-all",
                               match.matchPercent >= 80
                                 ? "bg-green-500"
                                 : match.matchPercent >= 50

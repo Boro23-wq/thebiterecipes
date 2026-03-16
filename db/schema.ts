@@ -198,7 +198,7 @@ export const pantryItems = pgTable("pantry_items", {
   isExpired: boolean("is_expired").default(false).notNull(),
 
   // Source tracking (how it got into pantry)
-  source: text("source").default("manual").notNull(), // "manual" | "grocery" | "voice" | "ai"
+  source: text("source").default("manual").notNull(), // "manual" | "grocery" | "voice" | "ai" | "receipt"
   groceryItemId: text("grocery_item_id").references(() => groceryListItems.id, {
     onDelete: "set null",
   }),

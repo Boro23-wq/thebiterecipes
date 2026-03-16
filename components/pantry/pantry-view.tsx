@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
-  ChefHat,
-  AlertTriangle,
+  Receipt,
+  Clock,
   Search,
   ChevronDown,
   ChevronUp,
@@ -16,6 +16,7 @@ import {
   X,
   Calendar,
   ShoppingCart,
+  CookingPot,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -25,10 +26,10 @@ import {
   addPantryItem,
   deletePantryItem,
   updatePantryItem,
-  deletePantryItemsBatch,
 } from "@/app/dashboard/pantry/actions";
 import PantryItemAutocomplete from "./pantry-item-autocomplete";
 import PantryVoiceInput from "./pantry-voice-input";
+import PantryReceiptScanner from "./pantry-receipt-scanner";
 import WhatCanICook from "./what-can-i-cook";
 
 type PantryItemType = {
@@ -47,7 +48,7 @@ type PantryItemType = {
   updatedAt: Date;
 };
 
-interface PantryViewUnifiedProps {
+interface PantryViewProps {
   initialItems: PantryItemType[];
   expiringItems: PantryItemType[];
 }
@@ -60,6 +61,7 @@ const CATEGORY_ORDER = [
   "frozen",
   "other",
 ];
+
 const CATEGORY_LABELS: Record<string, string> = {
   produce: "Produce",
   meat: "Meat & Seafood",
@@ -69,9 +71,39 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-// ─── Inline Item Row ─────────────────────────────────────────────────────────
+// Left accent bar color per category
+const CATEGORY_ACCENT: Record<string, string> = {
+  produce: "border-l-green-500",
+  meat: "border-l-red-400",
+  dairy: "border-l-blue-400",
+  pantry: "border-l-amber-500",
+  frozen: "border-l-cyan-400",
+  other: "border-l-gray-400",
+};
 
-function UnifiedItemRow({ item }: { item: PantryItemType }) {
+// Category header background tint
+const CATEGORY_BG: Record<string, string> = {
+  produce: "bg-green-50",
+  meat: "bg-red-50",
+  dairy: "bg-blue-50",
+  pantry: "bg-amber-50",
+  frozen: "bg-cyan-50",
+  other: "bg-gray-50",
+};
+
+// Count pill colors
+const CATEGORY_PILL: Record<string, string> = {
+  produce: "bg-green-100 text-green-700",
+  meat: "bg-red-100 text-red-700",
+  dairy: "bg-blue-100 text-blue-700",
+  pantry: "bg-amber-100 text-amber-700",
+  frozen: "bg-cyan-100 text-cyan-700",
+  other: "bg-gray-100 text-gray-600",
+};
+
+// ─── Item Row ────────────────────────────────────────────────────────────────
+
+function ItemRow({ item }: { item: PantryItemType }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
@@ -139,9 +171,10 @@ function UnifiedItemRow({ item }: { item: PantryItemType }) {
     );
   };
 
+  // ── Edit mode ──
   if (isEditing) {
     return (
-      <div className="px-4 py-3 space-y-2 bg-brand-50/50">
+      <div className="px-5 py-3 space-y-2 bg-brand-50/50">
         <div className="flex items-center gap-2">
           <Input
             value={editName}
@@ -193,53 +226,76 @@ function UnifiedItemRow({ item }: { item: PantryItemType }) {
     );
   }
 
+  // ── Display mode ──
   return (
     <div
       className={cn(
-        "group px-4 py-2.5 flex items-center justify-between hover:bg-muted/20 transition",
+        "group px-5 py-3 flex items-start justify-between hover:bg-muted/20 transition",
         item.isExpired && "opacity-50",
       )}
     >
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <p className="text-sm leading-tight truncate">
+      <div className="min-w-0 flex-1">
+        {/* Ingredient line — inline text, no flex wrapper */}
+        <p
+          className={cn(
+            "text-sm font-medium leading-snug",
+            item.isExpired && "line-through",
+          )}
+        >
           {item.amount && (
-            <span className="text-brand mr-1 font-semibold">
+            <span className="text-brand font-semibold mr-1">
               {item.amount}
               {item.unit ? ` ${item.unit}` : ""}
             </span>
           )}
-          {item.name}
+          <span>{item.name}</span>
         </p>
 
-        {/* Inline badges */}
-        {daysUntilExpiry !== null && (
-          <span
-            className={cn(
-              "inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-sm shrink-0",
-              daysUntilExpiry <= 0
-                ? "bg-red-100 text-red-700"
-                : daysUntilExpiry <= 3
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-brand-100 text-brand",
-            )}
-          >
-            {daysUntilExpiry <= 0
-              ? "Expired"
-              : daysUntilExpiry === 1
-                ? "1d"
-                : `${daysUntilExpiry}d`}
-          </span>
+        {/* Notes */}
+        {item.notes && (
+          <p className="text-[11px] text-text-muted mt-0.5 leading-snug">
+            {item.notes}
+          </p>
         )}
 
-        {item.source === "grocery" && (
-          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-700 shrink-0">
-            <ShoppingCart className="h-2.5 w-2.5 mr-0.5" />
-            Grocery
-          </span>
-        )}
+        {/* Badges row */}
+        <div className="flex items-center gap-1.5 mt-1.5 empty:hidden">
+          {daysUntilExpiry !== null && (
+            <span
+              className={cn(
+                "inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-sm",
+                daysUntilExpiry <= 0
+                  ? "bg-red-100 text-red-700"
+                  : daysUntilExpiry <= 3
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-brand-100 text-brand",
+              )}
+            >
+              {daysUntilExpiry <= 0
+                ? "Expired"
+                : daysUntilExpiry === 1
+                  ? "1d left"
+                  : `${daysUntilExpiry}d left`}
+            </span>
+          )}
+
+          {item.source === "grocery" && (
+            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-700">
+              <ShoppingCart className="h-2.5 w-2.5 mr-0.5" />
+              Grocery
+            </span>
+          )}
+          {item.source === "receipt" && (
+            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-violet-100 text-violet-700">
+              <Receipt className="h-2.5 w-2.5 mr-0.5" />
+              Receipt
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-0.5 shrink-0">
+      {/* Actions */}
+      <div className="flex items-center gap-0.5 shrink-0 ml-2">
         <Button
           onClick={() => setIsEditing(true)}
           variant="text"
@@ -262,31 +318,43 @@ function UnifiedItemRow({ item }: { item: PantryItemType }) {
   );
 }
 
-// ─── Inline Category Section ─────────────────────────────────────────────────
+// ─── Category Section ────────────────────────────────────────────────────────
 
-function UnifiedCategory({
-  label,
+function CategorySection({
+  category,
   items,
-  isLast,
 }: {
-  label: string;
+  category: string;
   items: PantryItemType[];
-  isLast: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  const label = CATEGORY_LABELS[category] || category;
+  const accentClass = CATEGORY_ACCENT[category] || "border-l-gray-400";
+  const bgClass = CATEGORY_BG[category] || "bg-gray-50";
+  const pillClass = CATEGORY_PILL[category] || "bg-gray-100 text-gray-600";
+
   return (
-    <div className={cn(!isLast && "border-b border-border-light")}>
-      {/* Category header — flat divider style */}
+    <div>
+      {/* Category header with left accent bar */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2.5 flex items-center justify-between bg-brand-50 hover:bg-brand-200 transition cursor-pointer"
+        className={cn(
+          "w-full px-5 py-2.5 flex items-center justify-between transition cursor-pointer border-l-[3px]",
+          accentClass,
+          bgClass,
+        )}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-text-primary">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-text-primary">
             {label}
           </span>
-          <span className="text-[10px] text-brand bg-brand-300 px-1.5 py-0.5 rounded-sm">
+          <span
+            className={cn(
+              "text-[10px] font-medium px-1.5 py-0.5 rounded-sm",
+              pillClass,
+            )}
+          >
             {items.length}
           </span>
         </div>
@@ -301,7 +369,7 @@ function UnifiedCategory({
       {isExpanded && (
         <div className="divide-y divide-border-light/50">
           {items.map((item) => (
-            <UnifiedItemRow key={item.id} item={item} />
+            <ItemRow key={item.id} item={item} />
           ))}
         </div>
       )}
@@ -311,10 +379,10 @@ function UnifiedCategory({
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 
-export default function PantryViewUnified({
+export default function PantryViewStyleB({
   initialItems,
   expiringItems,
-}: PantryViewUnifiedProps) {
+}: PantryViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [newItemName, setNewItemName] = useState("");
@@ -360,51 +428,114 @@ export default function PantryViewUnified({
     startTransition(() => router.refresh());
   };
 
-  const handleClearExpired = async () => {
-    const expiredIds = items.filter((i) => i.isExpired).map((i) => i.id);
-    if (expiredIds.length === 0) return;
-    setIsClearing(true);
-    try {
-      await deletePantryItemsBatch(expiredIds);
-      toast.success(`Removed ${expiredIds.length} expired items`);
-      startTransition(() => router.refresh());
-    } catch {
-      toast.error("Failed to clear expired items");
-    } finally {
-      setIsClearing(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      {/* Expiring Soon Banner */}
+      {/* Expiring Soon — Urgency Chips Banner */}
       {expiringItems.length > 0 && (
-        <div className="rounded-sm bg-amber-50 border border-amber-200 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-amber-800">
+        <div className="rounded-sm bg-amber-50 border border-amber-200 px-4 pt-2 pb-4 scrollbar-bite">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-semibold text-amber-800">
                 {expiringItems.length} item
                 {expiringItems.length > 1 ? "s" : ""} expiring soon
-              </h3>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {expiringItems
-                  .slice(0, 3)
-                  .map((i) => i.name)
-                  .join(", ")}
-                {expiringItems.length > 3 &&
-                  ` +${expiringItems.length - 3} more`}
-              </p>
+              </span>
             </div>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setShowCookSuggestions(true)}
-              className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
+              className="text-amber-700 hover:text-amber-900 hover:bg-amber-100 h-7 text-xs px-2.5"
             >
-              <ChefHat className="h-4 w-4 mr-1" />
               Use them up
             </Button>
+          </div>
+
+          {/* Scrollable chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
+            {expiringItems
+              .sort((a, b) => {
+                const aDays = a.expirationDate
+                  ? Math.ceil(
+                      (new Date(a.expirationDate).getTime() -
+                        new Date().getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    )
+                  : 999;
+                const bDays = b.expirationDate
+                  ? Math.ceil(
+                      (new Date(b.expirationDate).getTime() -
+                        new Date().getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    )
+                  : 999;
+                return aDays - bDays;
+              })
+              .map((item) => {
+                const daysLeft = item.expirationDate
+                  ? Math.ceil(
+                      (new Date(item.expirationDate).getTime() -
+                        new Date().getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    )
+                  : null;
+
+                const isUrgent = daysLeft !== null && daysLeft <= 1;
+                const isWarning = daysLeft !== null && daysLeft <= 3;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-2 rounded-sm px-3 py-2 bg-white shrink-0 border",
+                      isUrgent
+                        ? "border-red-200"
+                        : isWarning
+                          ? "border-amber-200"
+                          : "border-border-light",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full shrink-0",
+                        isUrgent
+                          ? "bg-red-500"
+                          : isWarning
+                            ? "bg-amber-500"
+                            : "bg-brand",
+                      )}
+                    />
+                    <span className="text-xs font-medium text-text-primary whitespace-nowrap">
+                      {item.amount && (
+                        <span className="text-brand font-semibold mr-1">
+                          {item.amount}
+                          {item.unit ? ` ${item.unit}` : ""}
+                        </span>
+                      )}
+                      {item.name}
+                    </span>
+                    {daysLeft !== null && (
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold px-1.5 py-0.5 rounded-sm whitespace-nowrap",
+                          isUrgent
+                            ? "bg-red-100 text-red-700"
+                            : isWarning
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-brand-100 text-brand",
+                        )}
+                      >
+                        {daysLeft <= 0
+                          ? "Today"
+                          : daysLeft === 1
+                            ? "1d"
+                            : `${daysLeft}d`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -430,6 +561,7 @@ export default function PantryViewUnified({
               <Plus className="h-4 w-4" />
             </Button>
             <PantryVoiceInput onItemsParsed={handleVoiceItems} />
+            <PantryReceiptScanner onItemsAdded={handleVoiceItems} />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -437,15 +569,15 @@ export default function PantryViewUnified({
             variant="brand"
             size="sm"
             onClick={() => setShowCookSuggestions(true)}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap w-full sm:w-auto"
           >
-            <ChefHat className="h-4 w-4" />
+            <CookingPot className="h-4 w-4" />
             What can I cook?
           </Button>
         </div>
       </div>
 
-      {/* Unified Card: Search + Categories + Items */}
+      {/* Main List */}
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-border-light rounded-sm">
           <div className="rounded-sm bg-brand-100 p-2.5 mb-3">
@@ -463,7 +595,7 @@ export default function PantryViewUnified({
         <div className="rounded-sm border border-border-light overflow-hidden bg-white">
           {/* Pinned Search */}
           {items.length > 5 && (
-            <div className="sticky top-0 z-10 bg-white border-b border-border-light px-3 py-2.5">
+            <div className="sticky top-0 z-10 bg-white border-b border-border-light px-4 py-2.5">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
@@ -476,16 +608,17 @@ export default function PantryViewUnified({
             </div>
           )}
 
-          {/* Category sections as flat dividers */}
+          {/* Category sections with accent bars */}
           {sortedCategories.length > 0 ? (
-            sortedCategories.map((category, idx) => (
-              <UnifiedCategory
-                key={category}
-                label={CATEGORY_LABELS[category]}
-                items={itemsByCategory[category]}
-                isLast={idx === sortedCategories.length - 1}
-              />
-            ))
+            <div className="divide-y divide-border-light">
+              {sortedCategories.map((category) => (
+                <CategorySection
+                  key={category}
+                  category={category}
+                  items={itemsByCategory[category]}
+                />
+              ))}
+            </div>
           ) : (
             <p className={cn(text.muted, "text-center py-8")}>
               No items match &quot;{searchQuery}&quot;

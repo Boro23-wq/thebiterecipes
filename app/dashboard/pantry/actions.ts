@@ -81,7 +81,7 @@ export async function addPantryItemsBatch(
     amount?: string;
     unit?: string;
     expirationDate?: Date;
-    source?: "manual" | "grocery" | "voice" | "ai";
+    source?: "manual" | "grocery" | "voice" | "ai" | "receipt";
   }>,
 ) {
   const user = await currentUser();
