@@ -6,7 +6,7 @@ import WaitlistButton from "./waitlist-btn";
 
 const WORDS = [
   "TikTok videos.",
-  "YouTube recipes.",
+  "YouTube videos.",
   "food blogs.",
   "Instagram posts.",
   "any URL.",
@@ -62,7 +62,7 @@ export default function Hero() {
   const typed = useTyped(WORDS);
 
   return (
-    <section className="container pt-20 pb-16 md:pt-32 md:pb-24">
+    <section className="container pt-16 pb-16 md:pb-24">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -78,10 +78,10 @@ export default function Hero() {
         </div>
 
         {/* Headline */}
-        <h1 className="text-display-sm font-extrabold tracking-tight mb-1">
+        <h1 className="text-display-md font-extrabold tracking-tight mb-1">
           Save recipes from
         </h1>
-        <h1 className="text-display-sm font-extrabold tracking-tight mb-8 flex items-baseline flex-wrap">
+        <h1 className="text-display-md font-extrabold tracking-tight mb-8 flex items-baseline flex-wrap">
           <span className="text-brand">{typed}</span>
           <span className="text-brand opacity-80 ml-0.5 font-light">|</span>
         </h1>

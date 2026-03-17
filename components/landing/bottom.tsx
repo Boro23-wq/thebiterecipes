@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import WaitlistButton from "./waitlist-btn";
+import Link from "next/link";
 
 export default function Bottom() {
   return (
@@ -38,7 +39,12 @@ export default function Bottom() {
       {/* Footer */}
       <footer className="border-t border-border-light py-5">
         <div className="container flex items-center justify-between flex-wrap gap-3">
-          <span className="font-bold text-base">Bite</span>
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <span className="font-extrabold text-lg tracking-tight leading-none">
+              bite
+              <span className="text-brand">.</span>
+            </span>
+          </Link>
 
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5">
             <span className="w-1.5 h-1.5 rounded-full bg-brand" />
