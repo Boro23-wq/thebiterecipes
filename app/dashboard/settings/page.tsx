@@ -3,19 +3,28 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { userPreferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
+
 import {
-  User as UserIcon,
-  Settings as SettingsIcon,
+  Settings,
   Bell,
   Database,
+  CircleUser,
+  MonitorSmartphone,
 } from "lucide-react";
 
 import { AccountSection } from "@/components/settings/account-section";
 import { PreferencesForm } from "@/components/settings/preferences-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { NotificationsForm } from "@/components/settings/notifications-form";
+import { ActiveSessions } from "@/components/settings/active-sessions";
 
-function SectionCard(props: {
+function Section({
+  id,
+  icon,
+  title,
+  description,
+  children,
+}: {
   id: string;
   icon: React.ReactNode;
   title: string;
@@ -23,40 +32,52 @@ function SectionCard(props: {
   children: React.ReactNode;
 }) {
   return (
-    <section id={props.id}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="rounded-sm bg-brand-50 p-2">{props.icon}</div>
+    <section
+      id={id}
+      className="border-b border-border-light pb-10 last:border-none"
+    >
+      <div className="mb-6 flex items-start gap-3">
+        <div className="mt-1 text-text-muted">{icon}</div>
+
         <div>
-          <h2 className="text-base font-semibold text-text-primary">
-            {props.title}
-          </h2>
-          <p className="text-xs text-text-secondary">{props.description}</p>
+          <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+
+          <p className="mt-1 max-w-xl text-sm text-text-secondary">
+            {description}
+          </p>
         </div>
       </div>
 
-      <div className="rounded-sm bg-white p-6 shadow-sm shadow-black/7.5">
-        {props.children}
-      </div>
+      <div className="pl-7">{children}</div>
     </section>
   );
 }
 
 function NavItem({
   href,
-  label,
   icon,
+  label,
 }: {
   href: string;
-  label: string;
   icon: React.ReactNode;
+  label: string;
 }) {
   return (
     <a
       href={href}
-      className="flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-brand-50 hover:text-brand transition-colors"
+      className="
+      flex items-center gap-2
+      rounded-md
+      px-3 py-2
+      text-sm
+      text-text-secondary
+      hover:bg-brand-50
+      hover:text-brand
+      transition-colors
+      "
     >
       {icon}
-      <span>{label}</span>
+      {label}
     </a>
   );
 }
@@ -65,52 +86,64 @@ export default async function SettingsPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  // Get or create user preferences
   let preferences = await db.query.userPreferences.findFirst({
     where: eq(userPreferences.userId, user.id),
   });
 
   if (!preferences) {
-    const [newPreferences] = await db
+    const [created] = await db
       .insert(userPreferences)
       .values({ userId: user.id })
       .returning();
-    preferences = newPreferences;
+
+    preferences = created;
   }
 
   return (
-    <div className="w-full">
+    <div className="mx-auto max-w-6xl">
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-xs font-medium text-text-secondary mb-1">
-          Dashboard / Settings
-        </p>
-        <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          Tune your experience, manage notifications, and control your data.
+
+      <div className="mb-12">
+        <p className="text-xs text-text-muted">Settings</p>
+
+        <h1 className="mt-1 text-3xl font-semibold text-text-primary">
+          Your settings
+        </h1>
+
+        <p className="mt-2 text-sm text-text-secondary">
+          Manage your account, preferences, and data.
         </p>
       </div>
 
-      {/* Content grid */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
-        {/* Sidebar nav */}
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <nav className="space-y-0.5">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[220px_1fr]">
+        {/* Sidebar */}
+
+        <aside className="hidden lg:block sticky top-8 self-start">
+          <nav className="space-y-1">
             <NavItem
               href="#account"
               label="Account"
-              icon={<UserIcon className="h-4 w-4" />}
+              icon={<CircleUser className="h-4 w-4" />}
             />
+
             <NavItem
               href="#preferences"
               label="Preferences"
-              icon={<SettingsIcon className="h-4 w-4" />}
+              icon={<Settings className="h-4 w-4" />}
             />
+
             <NavItem
               href="#notifications"
               label="Notifications"
               icon={<Bell className="h-4 w-4" />}
             />
+
+            <NavItem
+              href="#sessions"
+              label="Sessions"
+              icon={<MonitorSmartphone className="h-4 w-4" />}
+            />
+
             <NavItem
               href="#data"
               label="Data"
@@ -119,43 +152,53 @@ export default async function SettingsPage() {
           </nav>
         </aside>
 
-        {/* Main */}
-        <main className="space-y-10">
-          <SectionCard
+        {/* Main content */}
+
+        <main className="space-y-12">
+          <Section
             id="account"
-            icon={<UserIcon className="h-4 w-4 text-brand" />}
+            icon={<CircleUser className="h-4 w-4" />}
             title="Account"
-            description="Your profile and security settings."
+            description="Manage your profile and authentication."
           >
             <AccountSection />
-          </SectionCard>
+          </Section>
 
-          <SectionCard
+          <Section
             id="preferences"
-            icon={<SettingsIcon className="h-4 w-4 text-brand" />}
+            icon={<Settings className="h-4 w-4" />}
             title="Preferences"
-            description="Measurement, servings, view mode, and time format."
+            description="Customize measurement units, servings, and display settings."
           >
             <PreferencesForm preferences={preferences} />
-          </SectionCard>
+          </Section>
 
-          <SectionCard
+          <Section
             id="notifications"
-            icon={<Bell className="h-4 w-4 text-brand" />}
+            icon={<Bell className="h-4 w-4" />}
             title="Notifications"
             description="Control which updates you receive."
           >
             <NotificationsForm preferences={preferences} />
-          </SectionCard>
+          </Section>
 
-          <SectionCard
+          <Section
+            id="sessions"
+            icon={<MonitorSmartphone className="h-4 w-4" />}
+            title="Active sessions"
+            description="View and manage devices signed in to your account."
+          >
+            <ActiveSessions />
+          </Section>
+
+          <Section
             id="data"
-            icon={<Database className="h-4 w-4 text-brand" />}
+            icon={<Database className="h-4 w-4" />}
             title="Data management"
-            description="Export your recipes or delete your data."
+            description="Export your recipes or permanently delete your data."
           >
             <DataManagement />
-          </SectionCard>
+          </Section>
         </main>
       </div>
     </div>

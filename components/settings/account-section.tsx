@@ -1,9 +1,10 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Camera } from "lucide-react";
+import { ChevronRight, Camera, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { CopyToClipboard } from "@/components/settings/copy-to-clipboard";
 import { EditNameModal } from "@/components/settings/edit-name-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +20,7 @@ function InfoTile({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-sm bg-brand-50/50 px-4 py-3">
+    <div className="rounded-sm border border-border-light px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs text-text-secondary">{label}</div>
@@ -36,6 +37,7 @@ function InfoTile({
 export function AccountSection() {
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   if (!user) return null;
 
@@ -44,11 +46,12 @@ export function AccountSection() {
     `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "—";
   const initials = `${(user.firstName?.[0] ?? "U").toUpperCase()}${(user.lastName?.[0] ?? "").toUpperCase()}`;
 
+  const hasCustomImage = user.hasImage;
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file.");
       return;
@@ -65,8 +68,19 @@ export function AccountSection() {
       toast.error("Failed to update photo. Try again.");
     }
 
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveImage = async () => {
+    setIsRemoving(true);
+    try {
+      await user.setProfileImage({ file: null });
+      toast.success("Profile photo removed.");
+    } catch {
+      toast.error("Failed to remove photo. Try again.");
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   return (
@@ -75,8 +89,8 @@ export function AccountSection() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {/* Avatar with upload overlay */}
-          <div className="relative group">
-            <Avatar className="h-14 w-14">
+          <div className="group relative">
+            <Avatar className="h-10 w-10">
               <AvatarImage src={user.imageUrl} />
               <AvatarFallback className="bg-brand-50 text-brand text-sm font-bold">
                 {initials}
@@ -84,7 +98,7 @@ export function AccountSection() {
             </Avatar>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <Camera className="h-4 w-4 text-white" />
             </button>
@@ -105,12 +119,39 @@ export function AccountSection() {
           </div>
         </div>
 
-        <EditNameModal />
+        {/* Upload / Remove buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Camera className="mr-1.5 h-3.5 w-3.5" />
+            Upload photo
+          </Button>
+          {hasCustomImage && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer text-red-500 hover:bg-red-50 hover:text-red-600"
+              onClick={handleRemoveImage}
+              disabled={isRemoving}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {isRemoving ? "Removing…" : "Remove"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Info tiles */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <InfoTile label="Full name" value={fullName} />
+        <InfoTile
+          label="Full name"
+          value={fullName}
+          action={<EditNameModal />}
+        />
         <InfoTile
           label="Email"
           value={email || "—"}
@@ -119,24 +160,20 @@ export function AccountSection() {
       </div>
 
       {/* Security link */}
-      <div className="flex items-center justify-between rounded-sm bg-brand-50/50 px-4 py-3">
+      <div className="flex items-center justify-between rounded-sm border border-border-light px-4 py-3">
         <p className="text-xs text-text-secondary">
-          Password, MFA, and connected accounts are managed through Clerk.
+          Manage your password, MFA, and connected accounts.
         </p>
         <Button
           variant="outline"
           size="sm"
           asChild
-          className="cursor-pointer shrink-0 ml-4"
+          className="ml-4 shrink-0 cursor-pointer"
         >
-          <a
-            href="/dashboard/settings/account"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
+          <Link href="/dashboard/settings/account">
             Security
-          </a>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
         </Button>
       </div>
     </div>

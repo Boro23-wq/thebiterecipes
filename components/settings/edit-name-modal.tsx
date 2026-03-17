@@ -41,13 +41,12 @@ export function EditNameModal() {
   return (
     <>
       <Button
-        variant="outline"
-        size="sm"
+        variant="ghost"
+        size="icon-sm"
         onClick={handleOpen}
         className="cursor-pointer"
       >
-        <Pencil className="h-3.5 w-3.5" />
-        Edit Name
+        <Pencil className="h-4 w-4" />
       </Button>
 
       {open && (
@@ -60,7 +59,7 @@ export function EditNameModal() {
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-sm p-1 text-text-secondary hover:text-text-primary hover:bg-brand-50 transition-colors cursor-pointer"
+                className="rounded-sm p-1 text-text-secondary hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>

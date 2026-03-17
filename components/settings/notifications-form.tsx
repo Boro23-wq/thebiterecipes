@@ -67,11 +67,13 @@ export function NotificationsForm({ preferences }: NotificationsFormProps) {
         id="emailNotifications"
         title="Email notifications"
         description="Product updates and important changes about your recipes."
+        disabledNote="Coming soon"
       >
         <Switch
           id="emailNotifications"
           name="emailNotifications"
-          defaultChecked={preferences.emailNotifications ?? true}
+          defaultChecked={preferences.emailNotifications ?? false}
+          disabled
         />
       </SettingRow>
 
