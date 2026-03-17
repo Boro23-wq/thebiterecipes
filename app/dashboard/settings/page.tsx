@@ -21,31 +21,22 @@ function SectionCard(props: {
   title: string;
   description: string;
   children: React.ReactNode;
-  right?: React.ReactNode;
 }) {
   return (
-    <section
-      id={props.id}
-      className="rounded-sm border border-border-light bg-white shadow-xs"
-    >
-      <div className="flex items-start justify-between gap-4 border-b border-border-light px-6 py-5">
-        <div className="flex items-start gap-4">
-          <div className="rounded-sm border border-border-light bg-brand-50 p-2.5">
-            {props.icon}
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-text-primary">
-              {props.title}
-            </h2>
-            <p className="mt-1 text-sm text-text-secondary">
-              {props.description}
-            </p>
-          </div>
+    <section id={props.id}>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="rounded-sm bg-brand-50 p-2">{props.icon}</div>
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">
+            {props.title}
+          </h2>
+          <p className="text-xs text-text-secondary">{props.description}</p>
         </div>
-        {props.right ? <div className="pt-1">{props.right}</div> : null}
       </div>
 
-      <div className="px-6 py-6">{props.children}</div>
+      <div className="rounded-sm bg-white p-6 shadow-sm shadow-black/7.5">
+        {props.children}
+      </div>
     </section>
   );
 }
@@ -53,26 +44,19 @@ function SectionCard(props: {
 function NavItem({
   href,
   label,
-  sublabel,
   icon,
 }: {
   href: string;
   label: string;
-  sublabel: string;
   icon: React.ReactNode;
 }) {
   return (
     <a
       href={href}
-      className="group flex items-start gap-3 rounded-sm px-3 py-2.5 hover:bg-brand-100"
+      className="flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-brand-50 hover:text-brand transition-colors"
     >
-      <div className="mt-0.5 rounded-sm bg-brand-50 p-2 group-hover:bg-brand-100">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-text-primary">{label}</div>
-        <div className="text-xs text-text-secondary">{sublabel}</div>
-      </div>
+      {icon}
+      <span>{label}</span>
     </a>
   );
 }
@@ -96,127 +80,79 @@ export default async function SettingsPage() {
 
   return (
     <div className="w-full">
-      {/* Top header */}
-      <div className="relative overflow-hidden rounded-sm border border-border-light bg-white p-6 shadow-xs">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.5]">
-          <div className="absolute -top-24 -right-20 h-56 w-56 rounded-sm bg-brand-100 blur-3xl" />
-          <div className="absolute -bottom-28 -left-20 h-56 w-56 rounded-sm bg-brand-75 blur-3xl" />
-        </div>
-
-        <div className="relative">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">
-                Dashboard / Settings
-              </p>
-              <h1 className="mt-1 text-3xl font-bold tracking-tight text-text-primary">
-                Settings
-              </h1>
-              <p className="mt-2 text-sm text-text-secondary">
-                Tune your experience, manage notifications, and control your
-                data.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="rounded-sm border border-border-light bg-white px-3 py-1 text-xs text-text-secondary">
-                Signed in as{" "}
-                <span className="font-medium text-text-primary">
-                  {user.emailAddresses?.[0]?.emailAddress ?? "—"}
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-8">
+        <p className="text-xs font-medium text-text-secondary mb-1">
+          Dashboard / Settings
+        </p>
+        <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Tune your experience, manage notifications, and control your data.
+        </p>
       </div>
 
       {/* Content grid */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        {/* Sidebar */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
+        {/* Sidebar nav */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-sm border border-border-light bg-white p-4 shadow-xs">
-            <div className="px-2 pb-3">
-              <div className="text-sm font-semibold text-text-primary">
-                Sections
-              </div>
-              <div className="text-xs text-text-secondary">
-                Jump to what you need.
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <NavItem
-                href="#account"
-                label="Account"
-                sublabel="Profile + security"
-                icon={<UserIcon className="h-4 w-4 text-brand" />}
-              />
-              <NavItem
-                href="#preferences"
-                label="Preferences"
-                sublabel="Defaults + formatting"
-                icon={<SettingsIcon className="h-4 w-4 text-brand" />}
-              />
-              <NavItem
-                href="#notifications"
-                label="Notifications"
-                sublabel="Email + updates"
-                icon={<Bell className="h-4 w-4 text-brand" />}
-              />
-              <NavItem
-                href="#data"
-                label="Data"
-                sublabel="Export + delete"
-                icon={<Database className="h-4 w-4 text-brand" />}
-              />
-            </div>
-
-            <div className="mt-4 rounded-sm border border-border-light bg-brand-50 p-3">
-              <div className="text-xs font-semibold text-text-primary">
-                Pro tip
-              </div>
-              <p className="mt-1 text-xs text-text-secondary">
-                Keep “Default View” set to Grid if you mainly browse. Use
-                Compact if you’re doing a lot of editing.
-              </p>
-            </div>
-          </div>
+          <nav className="space-y-0.5">
+            <NavItem
+              href="#account"
+              label="Account"
+              icon={<UserIcon className="h-4 w-4" />}
+            />
+            <NavItem
+              href="#preferences"
+              label="Preferences"
+              icon={<SettingsIcon className="h-4 w-4" />}
+            />
+            <NavItem
+              href="#notifications"
+              label="Notifications"
+              icon={<Bell className="h-4 w-4" />}
+            />
+            <NavItem
+              href="#data"
+              label="Data"
+              icon={<Database className="h-4 w-4" />}
+            />
+          </nav>
         </aside>
 
         {/* Main */}
-        <main className="space-y-6">
+        <main className="space-y-10">
           <SectionCard
             id="account"
-            icon={<UserIcon className="h-5 w-5 text-brand" />}
+            icon={<UserIcon className="h-4 w-4 text-brand" />}
             title="Account"
-            description="View your account details and manage profile/security."
+            description="Your profile and security settings."
           >
-            <AccountSection user={user} />
+            <AccountSection />
           </SectionCard>
 
           <SectionCard
             id="preferences"
-            icon={<SettingsIcon className="h-5 w-5 text-brand" />}
+            icon={<SettingsIcon className="h-4 w-4 text-brand" />}
             title="Preferences"
-            description="Set defaults for measurement, servings, view mode, and time format."
+            description="Measurement, servings, view mode, and time format."
           >
             <PreferencesForm preferences={preferences} />
           </SectionCard>
 
           <SectionCard
             id="notifications"
-            icon={<Bell className="h-5 w-5 text-brand" />}
+            icon={<Bell className="h-4 w-4 text-brand" />}
             title="Notifications"
-            description="Control which updates you receive and how often."
+            description="Control which updates you receive."
           >
             <NotificationsForm preferences={preferences} />
           </SectionCard>
 
           <SectionCard
             id="data"
-            icon={<Database className="h-5 w-5 text-brand" />}
+            icon={<Database className="h-4 w-4 text-brand" />}
             title="Data management"
-            description="Export your recipes or permanently delete your data."
+            description="Export your recipes or delete your data."
           >
             <DataManagement />
           </SectionCard>

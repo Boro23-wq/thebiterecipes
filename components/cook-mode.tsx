@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useVoiceCommands } from "@/lib/use-voice-commands";
+import { usePreferences } from "@/lib/preferences-context";
 import { toast } from "sonner";
 
 // ============================================
@@ -705,6 +706,7 @@ function PreCookOverview({
 // ============================================
 
 export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
+  const { defaultServings, timeFormat } = usePreferences();
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
@@ -726,7 +728,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     });
     return detected;
   });
-  const [servingMultiplier, setServingMultiplier] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [direction, setDirection] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
@@ -755,8 +756,9 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   }, [currentStep]);
 
   const totalSteps = instructions.length;
-  const baseServings = recipe.servings || 4;
-  const currentServings = Math.round(baseServings * servingMultiplier);
+  const baseServings = recipe.servings || defaultServings;
+  const [currentServings, setCurrentServings] = useState(baseServings);
+  const servingMultiplier = currentServings / baseServings;
 
   // ---- WAKE LOCK ----
   useEffect(() => {
@@ -950,10 +952,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
 
   // ---- SERVING CONTROLS ----
   const adjustServings = (delta: number) => {
-    setServingMultiplier((prev) => {
-      const newVal = prev + delta * (1 / baseServings);
-      return Math.max(1 / baseServings, Math.min(newVal, 10));
-    });
+    setCurrentServings((prev) => Math.max(1, prev + delta));
   };
 
   // ---- READ STEP ALOUD ----

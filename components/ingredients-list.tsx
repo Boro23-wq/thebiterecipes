@@ -13,18 +13,19 @@ interface Ingredient {
 interface IngredientsListProps {
   ingredients: Ingredient[];
   baseServings: number;
-  multiplier: number;
-  onMultiplierChange: (m: number) => void;
+  currentServings: number;
+  onServingsChange: (servings: number) => void;
 }
 
 export function IngredientsList({
   ingredients,
   baseServings,
-  multiplier,
-  onMultiplierChange,
+  currentServings,
+  onServingsChange,
 }: IngredientsListProps) {
+  const multiplier = currentServings / baseServings;
+
   const scaleIngredient = (ingredient: string): string => {
-    // Match common patterns: "1 cup", "2 tablespoons", "1/2 teaspoon", "1.5 pounds"
     const pattern = /^(\d+(?:\/\d+)?|\d+\.\d+)\s+/;
     const match = ingredient.match(pattern);
 
@@ -60,7 +61,6 @@ export function IngredientsList({
   };
 
   const scaleAmount = (amount: string): string => {
-    // supports: "1", "1/2", "1.5", and mixed like "1 1/2"
     const parts = amount.trim().split(/\s+/);
     if (parts.length === 0) return amount;
 
@@ -80,7 +80,6 @@ export function IngredientsList({
     let base = first;
     let restStartIndex = 1;
 
-    // mixed number: "1 1/2"
     if (parts[1] && parts[1].includes("/")) {
       const second = parseSimple(parts[1]);
       if (second != null) {
@@ -122,7 +121,7 @@ export function IngredientsList({
 
   return (
     <div>
-      {/* Serving Multiplier */}
+      {/* Serving Controls */}
       <div className="flex items-center justify-between mb-6">
         <h3 className={cn(text.h2, "flex items-center gap-2")}>
           <span className="w-1 h-6 bg-brand" />
@@ -131,17 +130,16 @@ export function IngredientsList({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onMultiplierChange(Math.max(0.25, multiplier - 0.5))}
+            onClick={() => onServingsChange(Math.max(1, currentServings - 1))}
             className="w-8 h-8 flex items-center justify-center rounded-sm bg-brand-100 text-brand hover:bg-brand-200 transition-colors active:scale-90 cursor-pointer text-lg font-medium"
           >
             −
           </button>
           <span className="text-sm font-semibold text-text-primary w-16 text-center tabular-nums">
-            {Math.round(baseServings * multiplier)}{" "}
-            {Math.round(baseServings * multiplier) === 1 ? "srv" : "srvs"}
+            {currentServings} {currentServings === 1 ? "srv" : "srvs"}
           </span>
           <button
-            onClick={() => onMultiplierChange(Math.min(10, multiplier + 0.5))}
+            onClick={() => onServingsChange(currentServings + 1)}
             className="w-8 h-8 flex items-center justify-center rounded-sm bg-brand-100 text-brand hover:bg-brand-200 transition-colors active:scale-90 cursor-pointer text-lg font-medium"
           >
             +
@@ -151,11 +149,12 @@ export function IngredientsList({
 
       {/* Servings indicator */}
       <p className="text-sm text-text-muted mb-4">
-        Original: {baseServings} servings
-        {multiplier !== 1 && (
+        Original: {baseServings} {baseServings === 1 ? "serving" : "servings"}
+        {currentServings !== baseServings && (
           <span className="text-brand font-medium">
             {" "}
-            · Scaled {multiplier}x
+            · Scaled {multiplier % 1 === 0 ? multiplier : multiplier.toFixed(1)}
+            x
           </span>
         )}
       </p>

@@ -6,6 +6,7 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { biteClerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -49,7 +50,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${jetbrainsMono.variable} antialiased bg-[#FEFEFE]`}
       >
-        <ClerkProvider>
+        <ClerkProvider appearance={biteClerkAppearance}>
           {children}
           <Toaster position="top-center" />
         </ClerkProvider>
@@ -68,7 +69,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-// industry -> market components -> key segments what company focuses on
-
-// outline

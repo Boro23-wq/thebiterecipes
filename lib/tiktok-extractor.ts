@@ -97,6 +97,7 @@ async function fetchPageData(
  */
 export async function extractRecipeFromTikTok(
   url: string,
+  measurementUnit?: string,
 ): Promise<ExtractorResult | null> {
   // Fetch oEmbed and page data in parallel
   const [oembed, pageData] = await Promise.all([
@@ -138,7 +139,11 @@ export async function extractRecipeFromTikTok(
 
   const rawText = parts.join("\n\n");
 
-  const recipe = await parseRecipeWithGemini(rawText, "TikTok video");
+  const recipe = await parseRecipeWithGemini(
+    rawText,
+    "TikTok video",
+    measurementUnit,
+  );
 
   if (!recipe) return null;
 

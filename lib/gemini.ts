@@ -28,12 +28,18 @@ export interface GeminiGroceryItem {
   sourceIngredients: string[];
 }
 
-const RECIPE_PARSE_PROMPT = `You are a recipe extraction assistant. Given raw text from a social media post (caption, transcript, or description), extract a structured recipe.
+function buildRecipeParsePrompt(measurementUnit?: string): string {
+  const unitInstruction =
+    measurementUnit === "metric"
+      ? `\n- IMPORTANT: Express ALL ingredient quantities in metric units (grams, milliliters, °C). Convert any imperial measurements (cups, oz, lbs, °F) to metric equivalents.`
+      : `\n- Express ingredient quantities in imperial units (cups, tablespoons, teaspoons, ounces, pounds, °F) when possible.`;
+
+  return `You are a recipe extraction assistant. Given raw text from a social media post (caption, transcript, or description), extract a structured recipe.
 
 Rules:
 - Extract ONLY what is explicitly mentioned. Do not invent ingredients or steps.
 - If the text is not a recipe or doesn't contain enough info to form one, return exactly: {"error": "not_a_recipe"}
-- Ingredients should include quantities when mentioned (e.g. "2 cups flour", "1 tbsp olive oil").
+- Ingredients should include quantities when mentioned (e.g. "2 cups flour", "1 tbsp olive oil").${unitInstruction}
 - Remove leading dashes, bullets, or hyphens from ingredients (e.g. "-1 cup flour" becomes "1 cup flour").
 - Section headers like "For the Chicken:", "For the Sauce:", "For the Rice:" are NOT ingredients. Use them to add context to the ingredients that follow (e.g. "1.5 lbs chicken thighs (for the chicken)") or omit them entirely.
 - If multiple sub-recipes exist (chicken, rice, sauce, salad), merge all ingredients into one flat list and all steps into one ordered list.
@@ -58,6 +64,7 @@ Return this JSON shape:
   "instructions": ["array of strings"],
   "notes": "string or omit"
 }`;
+}
 
 const GROCERY_AGGREGATE_PROMPT = `You are a smart grocery shopping assistant. Given raw recipe ingredients from multiple recipes (with serving multipliers already applied), produce a consolidated, shopper-friendly grocery list.
  
@@ -111,12 +118,15 @@ Return ONLY a valid JSON array. No markdown, no backticks, no explanation. Examp
 export async function parseRecipeFromImages(
   images: { base64: string; mimeType: string }[],
   sourceContext?: string,
+  measurementUnit?: string,
 ): Promise<GeminiParsedRecipe | null> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
+  const basePrompt = buildRecipeParsePrompt(measurementUnit);
+
   const prompt = sourceContext
-    ? `${RECIPE_PARSE_PROMPT}\n\nSource: ${sourceContext} screenshot(s)`
-    : `${RECIPE_PARSE_PROMPT}\n\nExtract the recipe from these screenshot(s).`;
+    ? `${basePrompt}\n\nSource: ${sourceContext} screenshot(s)`
+    : `${basePrompt}\n\nExtract the recipe from these screenshot(s).`;
 
   // Build parts array: text prompt + image(s)
   const parts: Array<
@@ -231,6 +241,7 @@ export async function parseRecipeFromImages(
 export async function parseRecipeWithGemini(
   rawText: string,
   sourceContext?: string,
+  measurementUnit?: string,
 ): Promise<GeminiParsedRecipe | null> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
@@ -245,10 +256,10 @@ export async function parseRecipeWithGemini(
     ? `Source: ${sourceContext}\n\n${trimmedText}`
     : trimmedText;
 
+  const prompt = buildRecipeParsePrompt(measurementUnit);
+
   const runGemini = async (): Promise<GeminiParsedRecipe | null> => {
-    const result = await model.generateContent(
-      `${RECIPE_PARSE_PROMPT}\n\n${userMessage}`,
-    );
+    const result = await model.generateContent(`${prompt}\n\n${userMessage}`);
 
     const text = result.response.text().trim();
 

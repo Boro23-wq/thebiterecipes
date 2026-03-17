@@ -50,6 +50,7 @@ async function getBestThumbnail(videoId: string): Promise<string> {
 
 export async function extractRecipeFromYouTube(
   url: string,
+  measurementUnit?: string,
 ): Promise<ExtractorResult | null> {
   const videoId = extractVideoId(url, "youtube");
   if (!videoId) return null;
@@ -84,6 +85,7 @@ export async function extractRecipeFromYouTube(
   const recipe = await parseRecipeWithGemini(
     parts.join("\n\n"),
     "YouTube video",
+    measurementUnit,
   );
   if (!recipe) return null;
 
