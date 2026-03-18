@@ -11,10 +11,10 @@ import {
   Droplet,
 } from "lucide-react";
 import { CardSm } from "@/components/ui/card-wrapper";
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IngredientsList } from "@/components/ingredients-list";
 import { cn } from "@/lib/utils";
 import { text, icon, spacing } from "@/lib/design-tokens";
+import { usePreferences } from "@/lib/preferences-context";
 
 interface Ingredient {
   id: number;
@@ -49,14 +49,15 @@ export function RecipeDetailClient({
   ingredients,
   instructions,
 }: RecipeDetailClientProps) {
-  const [servingMultiplier, setServingMultiplier] = useState(1);
+  const { defaultServings } = usePreferences();
+
+  const baseServings = recipe.servings || defaultServings;
+  const [currentServings, setCurrentServings] = useState(baseServings);
+  const servingMultiplier = currentServings / baseServings;
+
   const [activeTab, setActiveTab] = useState<
     "ingredients" | "instructions" | "notes"
   >("ingredients");
-
-  const scaledServings = recipe.servings
-    ? Math.round(recipe.servings * servingMultiplier)
-    : null;
 
   return (
     <>
@@ -69,7 +70,7 @@ export function RecipeDetailClient({
           </h3>
 
           {recipe.totalTime ||
-          recipe.servings ||
+          baseServings ||
           recipe.calories ||
           recipe.protein ||
           recipe.carbs ||
@@ -88,22 +89,24 @@ export function RecipeDetailClient({
                 </div>
               )}
 
-              {!!recipe.servings && (
-                <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
-                  <div className="flex items-center gap-2 text-text-secondary">
-                    <Users className={icon.base} />
-                    <span className="text-xs">Servings</span>
-                  </div>
-                  <span className="text-lg font-semibold text-text-primary">
-                    {scaledServings}
-                    {servingMultiplier !== 1 && (
-                      <span className="text-sm text-text-secondary ml-1">
-                        ({servingMultiplier}x)
-                      </span>
-                    )}
-                  </span>
+              <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Users className={icon.base} />
+                  <span className="text-xs">Servings</span>
                 </div>
-              )}
+                <span className="text-lg font-semibold text-text-primary">
+                  {currentServings}
+                  {servingMultiplier !== 1 && (
+                    <span className="text-sm text-text-secondary ml-1">
+                      (
+                      {servingMultiplier % 1 === 0
+                        ? servingMultiplier
+                        : servingMultiplier.toFixed(1)}
+                      x)
+                    </span>
+                  )}
+                </span>
+              </div>
 
               {!!recipe.calories && (
                 <div className="flex flex-col gap-1 p-3 bg-brand-100 rounded-sm">
@@ -175,7 +178,6 @@ export function RecipeDetailClient({
         </div>
       </section>
 
-      {/* Tabs Section */}
       {/* Tab Buttons */}
       <div className="flex items-center bg-brand-100 rounded-sm p-0.5 w-fit mb-6">
         <button
@@ -221,9 +223,9 @@ export function RecipeDetailClient({
           {ingredients.length > 0 ? (
             <IngredientsList
               ingredients={ingredients}
-              baseServings={recipe.servings || 4}
-              multiplier={servingMultiplier}
-              onMultiplierChange={setServingMultiplier}
+              baseServings={baseServings}
+              currentServings={currentServings}
+              onServingsChange={setCurrentServings}
             />
           ) : (
             <>

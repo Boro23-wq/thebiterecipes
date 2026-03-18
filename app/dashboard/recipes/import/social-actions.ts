@@ -1,5 +1,9 @@
 "use server";
 
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { userPreferences } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { detectPlatform } from "@/lib/platform-detector";
 import { extractRecipeFromYouTube } from "@/lib/youtube-extractor";
 import { extractRecipeFromTikTok } from "@/lib/tiktok-extractor";
@@ -27,6 +31,18 @@ interface ParsedRecipe {
   source?: string;
 }
 
+async function getUserMeasurementUnit(): Promise<string> {
+  const user = await currentUser();
+  if (!user) return "imperial";
+
+  const prefs = await db.query.userPreferences.findFirst({
+    where: eq(userPreferences.userId, user.id),
+    columns: { measurementUnit: true },
+  });
+
+  return prefs?.measurementUnit ?? "imperial";
+}
+
 /**
  * Parse a social media URL into a structured recipe using platform-specific
  * extractors + Gemini AI.
@@ -35,15 +51,16 @@ export async function parseSocialMediaUrl(
   url: string,
 ): Promise<ParsedRecipe | null> {
   const { platform } = detectPlatform(url);
+  const measurementUnit = await getUserMeasurementUnit();
 
   let result: ExtractorResult | null = null;
 
   switch (platform) {
     case "youtube":
-      result = await extractRecipeFromYouTube(url);
+      result = await extractRecipeFromYouTube(url, measurementUnit);
       break;
     case "tiktok":
-      result = await extractRecipeFromTikTok(url);
+      result = await extractRecipeFromTikTok(url, measurementUnit);
       break;
     case "instagram":
     case "pinterest":
@@ -93,7 +110,12 @@ export async function parseManualText(
   text: string,
   sourceUrl?: string,
 ): Promise<ParsedRecipe | null> {
-  const recipe = await parseRecipeWithGemini(text, "social media post");
+  const measurementUnit = await getUserMeasurementUnit();
+  const recipe = await parseRecipeWithGemini(
+    text,
+    "social media post",
+    measurementUnit,
+  );
 
   if (!recipe) return null;
 
@@ -128,11 +150,13 @@ export async function parseScreenshots(
   images: { base64: string; mimeType: string }[],
   sourceUrl?: string,
 ): Promise<ParsedRecipe | null> {
+  const measurementUnit = await getUserMeasurementUnit();
   const { parseRecipeFromImages } = await import("@/lib/gemini");
 
   const recipe = await parseRecipeFromImages(
     images,
     sourceUrl ? "social media" : undefined,
+    measurementUnit,
   );
 
   if (!recipe) return null;

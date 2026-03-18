@@ -10,6 +10,7 @@ import {
   CalendarPlus,
   ChevronRight,
   Package,
+  MoreVertical,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -34,9 +35,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 
 const topItems = [
   {
@@ -127,12 +136,13 @@ export function AppSidebar({ categories }: AppSidebarProps) {
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="border-b border-gray-200 px-4 py-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[#FF6B35] text-white font-bold">
-            B
-          </div>
-          <span className="font-semibold text-base text-text-primary">
-            Bite
-          </span>
+          <Image
+            src="/android-chrome-192x192.png"
+            alt="Bite"
+            width={24}
+            height={24}
+            className="rounded-sm"
+          />
         </div>
       </SidebarHeader>
 
@@ -301,9 +311,9 @@ export function AppSidebar({ categories }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-200 p-4">
-        <div className="flex items-center gap-3 mb-2">
-          <Avatar className="h-8 w-8">
+      <SidebarFooter className="border-t border-gray-200 p-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={user?.imageUrl} />
             <AvatarFallback className="bg-[#FFF5F0] text-[#FF6B35] text-xs font-medium">
               {user?.firstName?.[0]}
@@ -318,18 +328,41 @@ export function AppSidebar({ categories }: AppSidebarProps) {
               {user?.primaryEmailAddress?.emailAddress}
             </p>
           </div>
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => signOut()}
-              className="transition-all duration-200 text-text-primary hover:bg-[#FFF5F0] hover:text-[#FF6B35]"
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="shrink-0 rounded-sm p-1.5 text-text-secondary hover:bg-brand-50 hover:text-text-primary transition-colors cursor-pointer">
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="end"
+              sideOffset={8}
+              className="w-48 bg-white border border-border-light shadow-sm"
             >
-              <LogOut className="h-4 w-4 transition-colors duration-200" />
-              <span className="text-sm">Sign Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/settings"
+                  className="cursor-pointer text-text-primary hover:text-brand hover:bg-brand-50"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-border-light" />
+
+              <DropdownMenuItem
+                onClick={() => signOut()}
+                className="cursor-pointer rounded-sm text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4 text-red-600" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

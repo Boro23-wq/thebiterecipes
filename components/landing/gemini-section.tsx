@@ -52,11 +52,9 @@ export default function GeminiSection() {
         return;
       }
 
-      // Set current step to running
       setSteps((prev) => prev.map((s, i) => (i === idx ? "running" : s)));
       setProgress(((idx + 0.5) / PIPELINE.length) * 100);
 
-      // After duration, mark done and start next
       const currentIdx = idx;
       setTimeout(() => {
         setSteps((prev) => prev.map((s, i) => (i === currentIdx ? "done" : s)));
@@ -72,58 +70,14 @@ export default function GeminiSection() {
   return (
     <section className="border-y border-border-light py-20 md:py-24">
       <div className="container grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-        {/* Left — copy */}
+        {/* Left — animated pipeline */}
         <motion.div
+          ref={ref}
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.55 }}
-        >
-          {/* Gemini badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/20 bg-brand/5 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
-            <span className="text-xs font-semibold text-brand tracking-wide">
-              Powered by Gemini 2.5 Flash
-            </span>
-          </div>
-
-          <h2 className="font-extrabold text-3xl md:text-5xl tracking-tight leading-[1.05] mb-5">
-            Not a scraper.
-            <br />
-            <span className="text-brand">A reader.</span>
-          </h2>
-
-          <p className="text-text-secondary leading-relaxed text-sm md:text-base mb-7">
-            Traditional importers fail the moment a recipe lives in a video
-            description or TikTok caption. Bite uses Gemini — Google&apos;s
-            fastest multimodal model — to actually understand the content, not
-            just parse HTML tags.
-          </p>
-
-          <ul className="flex flex-col gap-3">
-            {FEATURES.map((f, i) => (
-              <motion.li
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.09 }}
-                className="flex items-start gap-3 text-sm text-text-secondary"
-              >
-                <SquareDashedMousePointer className="w-4 h-4 text-brand shrink-0 mt-0.5 opacity-90" />
-                {f}
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
-
-        {/* Right — animated pipeline */}
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
           transition={{ duration: 0.55, delay: 0.1 }}
+          className="order-2 md:order-1"
         >
           <div className="bg-white border border-border-subtle rounded-sm overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             {/* Chrome */}
@@ -162,7 +116,6 @@ export default function GeminiSection() {
                     transition={{ duration: 0.25 }}
                     className="flex items-center gap-3 font-mono text-[11px]"
                   >
-                    {/* Icon */}
                     <span className="w-4 h-4 flex items-center justify-center shrink-0">
                       {state === "running" ? (
                         <Loader2 className="w-3.5 h-3.5 text-brand animate-spin" />
@@ -171,10 +124,8 @@ export default function GeminiSection() {
                       )}
                     </span>
 
-                    {/* Text */}
                     <span className="text-text-primary">{step.text}</span>
 
-                    {/* Badge */}
                     <span
                       className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-sm ${
                         state === "running"
@@ -229,6 +180,50 @@ export default function GeminiSection() {
               </span>
             </motion.div>
           </div>
+        </motion.div>
+
+        {/* Right on desktop, first on mobile — copy */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55 }}
+          className="order-1 md:order-2"
+        >
+          {/* Gemini badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/20 bg-brand/5 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+            <span className="text-xs font-semibold text-brand tracking-wide">
+              Powered by Gemini 2.5 Flash
+            </span>
+          </div>
+
+          <h2 className="font-extrabold text-3xl md:text-4xl tracking-tight leading-[1.1] mb-4">
+            Not a scraper. <span className="text-brand">A reader.</span>
+          </h2>
+
+          <p className="text-text-secondary leading-relaxed text-sm md:text-base mb-7">
+            Traditional importers fail the moment a recipe lives in a video
+            description or TikTok caption. Bite uses Gemini — Google&apos;s
+            fastest multimodal model — to actually understand the content, not
+            just parse HTML tags.
+          </p>
+
+          <ul className="flex flex-col gap-3">
+            {FEATURES.map((f, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.09 }}
+                className="flex items-start gap-3 text-sm text-text-secondary"
+              >
+                <SquareDashedMousePointer className="w-4 h-4 text-brand shrink-0 mt-0.5 opacity-90" />
+                {f}
+              </motion.li>
+            ))}
+          </ul>
         </motion.div>
       </div>
     </section>

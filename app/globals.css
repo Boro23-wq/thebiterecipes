@@ -370,22 +370,49 @@
   }
 }
 
+/* Global page scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 6px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
 /* Scrollbar */
 .scrollbar-bite {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
+
 .scrollbar-bite::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 .scrollbar-bite::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .scrollbar-bite::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.22);
   border-radius: 999px;
 }
+
 .scrollbar-bite::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.32);
 }
@@ -393,4 +420,81 @@
 [data-sonner-toast] {
   border-radius: 0.125rem !important;
   border-width: 1px !important;
+}
+
+/* ============================================
+   Clerk component overrides — add to globals.css
+   ============================================ */
+
+/* Kill all shadows on Clerk components */
+.cl-card,
+.cl-userProfile-root,
+.cl-modalContent,
+.cl-menuList,
+.cl-alert,
+.cl-socialButtonsBlockButton,
+.cl-phoneInputBox,
+.cl-formFieldInput,
+.cl-button,
+.cl-input {
+  box-shadow: none !important;
+}
+
+/* Force rounded-sm (4px) everywhere */
+.cl-card,
+.cl-modalContent,
+.cl-menuList,
+.cl-button,
+.cl-formFieldInput,
+.cl-input,
+.cl-badge,
+.cl-tag,
+.cl-alert,
+.cl-socialButtonsBlockButton,
+.cl-profileSectionPrimaryButton,
+.cl-menuItem,
+.cl-avatarBox {
+  border-radius: 0.125rem !important;
+}
+
+/* Brand color on primary buttons */
+.cl-formButtonPrimary {
+  background-color: #ff6b35 !important;
+  box-shadow: none !important;
+  border-radius: 0.125rem !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: #e55a2b !important;
+}
+
+/* Brand color on links/actions */
+.cl-footerActionLink,
+.cl-profileSectionPrimaryButton,
+.cl-formButtonReset,
+.cl-avatarImageActionsUpload {
+  color: #ff6b35 !important;
+}
+
+.cl-footerActionLink:hover,
+.cl-profileSectionPrimaryButton:hover,
+.cl-formButtonReset:hover {
+  color: #e55a2b !important;
+}
+
+/* Input focus states */
+.cl-formFieldInput:focus,
+.cl-input:focus {
+  border-color: #ff6b35 !important;
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2) !important;
+}
+
+/* Hide "Secured by Clerk" footer */
+.cl-internal-b3fm6y {
+  display: none !important;
+}
+
+/* Navbar active state */
+.cl-navbarButton[data-active="true"] {
+  color: #ff6b35 !important;
 }

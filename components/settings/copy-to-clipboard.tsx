@@ -17,7 +17,7 @@ export function CopyToClipboard({
     <Button
       type="button"
       variant="ghost"
-      className="h-8 px-2"
+      size="icon-sm"
       aria-label={ariaLabel}
       onClick={async () => {
         if (!value) return;

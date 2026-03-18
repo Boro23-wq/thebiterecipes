@@ -3,8 +3,9 @@
 import { motion } from "framer-motion";
 import WaitlistButton from "./waitlist-btn";
 import Link from "next/link";
+import Image from "next/image";
 
-export default function Bottom() {
+export default function Footer() {
   return (
     <>
       {/* CTA */}
@@ -40,18 +41,14 @@ export default function Bottom() {
       <footer className="border-t border-border-light py-5">
         <div className="container flex items-center justify-between flex-wrap gap-3">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="font-extrabold text-lg tracking-tight leading-none">
-              bite
-              <span className="text-brand">.</span>
-            </span>
+            <Image
+              src="/android-chrome-192x192.png"
+              alt="Bite"
+              width={24}
+              height={24}
+              className="rounded-sm"
+            />
           </Link>
-
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
-            <span className="text-xs font-semibold text-brand tracking-wide">
-              Powered by Gemini 2.5 Flash
-            </span>
-          </div>
 
           <span className="text-sm text-text-muted">© 2026 Bite</span>
         </div>

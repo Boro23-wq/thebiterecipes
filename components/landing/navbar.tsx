@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -14,16 +15,20 @@ export default function Navbar() {
       <div className="container flex items-center justify-between h-14">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-extrabold text-lg tracking-tight leading-none">
-            bite
-            <span className="text-brand">.</span>
-          </span>
+          <Image
+            src="/android-chrome-192x192.png"
+            alt="Bite"
+            width={24}
+            height={24}
+            className="rounded-sm"
+          />
         </Link>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-flex text-[10px] font-semibold text-brand bg-brand/5 border border-brand/15 rounded-sm px-2.5 py-1 tracking-wide">
-            Early access
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm border border-brand/25 bg-brand/5">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+          <span className="text-xs font-semibold text-brand tracking-wide">
+            Powered by Gemini 2.5 Flash
           </span>
         </div>
       </div>

@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { convertAmount } from "@/lib/convert-units";
+import { usePreferences } from "@/lib/preferences-context";
 import { useVoiceCommands } from "@/lib/use-voice-commands";
 import { toast } from "sonner";
 
@@ -151,8 +153,6 @@ const VOICE_HINTS = [
   { cmd: '"Read"', desc: "Read step aloud" },
   { cmd: '"Step 3"', desc: "Jump to step" },
 ];
-
-// (Voice command feedback uses Sonner toasts)
 
 // ============================================
 // MIC INDICATOR BUTTON
@@ -705,6 +705,7 @@ function PreCookOverview({
 // ============================================
 
 export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
+  const { defaultServings, timeFormat, measurementUnit } = usePreferences();
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
@@ -726,7 +727,6 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
     });
     return detected;
   });
-  const [servingMultiplier, setServingMultiplier] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
   const [direction, setDirection] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
@@ -755,8 +755,9 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
   }, [currentStep]);
 
   const totalSteps = instructions.length;
-  const baseServings = recipe.servings || 4;
-  const currentServings = Math.round(baseServings * servingMultiplier);
+  const baseServings = recipe.servings || defaultServings;
+  const [currentServings, setCurrentServings] = useState(baseServings);
+  const servingMultiplier = currentServings / baseServings;
 
   // ---- WAKE LOCK ----
   useEffect(() => {
@@ -950,10 +951,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
 
   // ---- SERVING CONTROLS ----
   const adjustServings = (delta: number) => {
-    setServingMultiplier((prev) => {
-      const newVal = prev + delta * (1 / baseServings);
-      return Math.max(1 / baseServings, Math.min(newVal, 10));
-    });
+    setCurrentServings((prev) => Math.max(1, prev + delta));
   };
 
   // ---- READ STEP ALOUD ----
@@ -1131,7 +1129,7 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
       </div>
 
       {/* ═══════════════ MAIN CONTENT ═══════════════ */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
         {/* ---- INGREDIENTS PANEL ---- */}
         <button
           onClick={() => setShowIngredients(!showIngredients)}
@@ -1216,7 +1214,10 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                     >
                       {ing.amount && (
                         <span className="font-semibold">
-                          {scaleAmount(ing.amount, servingMultiplier)}{" "}
+                          {convertAmount(
+                            scaleAmount(ing.amount, servingMultiplier),
+                            measurementUnit as "imperial" | "metric",
+                          )}
                         </span>
                       )}
                       {ing.ingredient}
@@ -1228,192 +1229,202 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
           </div>
         </div>
 
-        {/* ---- STEP CONTENT ---- */}
-        <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden px-4 py-6">
-          <div className="flex items-center gap-1.5 mb-6 flex-wrap justify-center max-w-xs">
-            {instructions.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => goToStep(idx)}
-                className={cn(
-                  "rounded-full transition-all duration-300 active:scale-90",
-                  idx === currentStep
-                    ? "w-8 h-2.5 bg-brand"
-                    : idx < currentStep
-                      ? "w-2.5 h-2.5 bg-brand/40"
-                      : "w-2.5 h-2.5 bg-brand-300",
-                )}
-              />
-            ))}
-          </div>
+        {/* ---- STEP CONTENT (scrollable) ---- */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-bite">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-1.5 mb-6 flex-wrap justify-center max-w-xs">
+                {instructions.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => goToStep(idx)}
+                    className={cn(
+                      "rounded-full transition-all duration-300 active:scale-90",
+                      idx === currentStep
+                        ? "w-8 h-2.5 bg-brand"
+                        : idx < currentStep
+                          ? "w-2.5 h-2.5 bg-brand/40"
+                          : "w-2.5 h-2.5 bg-brand-300",
+                    )}
+                  />
+                ))}
+              </div>
 
-          <div className="flex-1 flex items-center justify-center w-full max-w-2xl relative">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={currentStep}
-                custom={direction}
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={handleDragEnd}
-                className="w-full cursor-grab active:cursor-grabbing"
-              >
-                <div className="relative">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-sm border border-brand-200 shadow-brand-sm p-6 sm:p-8">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-sm bg-linear-to-br from-brand to-brand-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm font-bold">
-                          {currentStep + 1}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={readCurrentStep}
+              <div className="w-full max-w-2xl relative">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={currentStep}
+                    custom={direction}
+                    variants={stepVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    }}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={handleDragEnd}
+                    className="w-full cursor-grab active:cursor-grabbing"
+                  >
+                    <div className="relative">
+                      <div className="bg-white/80 backdrop-blur-sm rounded-sm border border-brand-200 shadow-brand-sm p-6 sm:p-8">
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-10 h-10 rounded-sm bg-linear-to-br from-brand to-brand-600 flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-sm font-bold">
+                              {currentStep + 1}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={readCurrentStep}
+                              className={cn(
+                                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors cursor-pointer",
+                                isReading
+                                  ? "bg-brand text-white"
+                                  : "bg-brand-100 text-brand hover:bg-brand-200",
+                              )}
+                            >
+                              {isReading ? "Reading..." : "Read"}
+                            </button>
+                            {currentTimer && (
+                              <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-100 px-2 py-1 rounded-sm">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(currentTimer.totalSeconds)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <p
                           className={cn(
-                            "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors cursor-pointer",
-                            isReading
-                              ? "bg-brand text-white"
-                              : "bg-brand-100 text-brand hover:bg-brand-200",
+                            "text-lg sm:text-xl leading-relaxed font-medium transition-colors duration-300",
+                            isReading ? "text-brand" : "text-text-primary",
                           )}
                         >
-                          {isReading ? "Reading..." : "Read"}
-                        </button>
+                          {currentInstruction?.step}
+                        </p>
+
                         {currentTimer && (
-                          <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-100 px-2 py-1 rounded-sm">
-                            <Clock className="w-3 h-3" />
-                            {formatTime(currentTimer.totalSeconds)}
-                          </span>
+                          <button
+                            onClick={() => setAutoAdvance(!autoAdvance)}
+                            className={cn(
+                              "mt-4 flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer",
+                              autoAdvance ? "text-brand" : "text-text-muted",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "w-8 h-4.5 rounded-full transition-colors relative",
+                                autoAdvance ? "bg-brand" : "bg-brand-300",
+                              )}
+                            >
+                              <motion.div
+                                className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
+                                animate={{ left: autoAdvance ? 16 : 2 }}
+                                transition={{ duration: 0.2 }}
+                              />
+                            </div>
+                            Auto-advance when timer ends
+                          </button>
+                        )}
+
+                        {currentTimer && (
+                          <div className="mt-8 flex justify-center">
+                            <TimerRing
+                              timer={currentTimer}
+                              onToggle={() => toggleTimer(currentStep)}
+                              onReset={() => resetTimer(currentStep)}
+                            />
+                          </div>
+                        )}
+
+                        {/* Voice hint */}
+                        {isSupported && voiceEnabled && (
+                          <div className="mt-6 flex items-center gap-2 text-[11px] text-text-muted bg-brand-50 border border-brand-200 rounded-sm px-2.5 py-1.5 w-fit">
+                            <Mic className="w-3 h-3 text-brand" />
+                            <span>
+                              Try saying{" "}
+                              <span className="font-semibold text-brand">
+                                &quot;Next&quot;
+                              </span>
+                              ,{" "}
+                              <span className="font-semibold text-brand">
+                                &quot;Previous&quot;
+                              </span>
+                              , or{" "}
+                              <span className="font-semibold text-brand">
+                                &quot;Start timer&quot;
+                              </span>
+                              , or{" "}
+                              <span className="font-semibold text-brand">
+                                &quot;Finish&quot;
+                              </span>
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    <p
-                      className={cn(
-                        "text-lg sm:text-xl leading-relaxed font-medium transition-colors duration-300",
-                        isReading ? "text-brand" : "text-text-primary",
-                      )}
-                    >
-                      {currentInstruction?.step}
+                    <p className="text-center text-xs text-text-muted mt-4 select-none">
+                      Swipe or tap arrows to navigate
                     </p>
-
-                    {currentTimer && (
-                      <button
-                        onClick={() => setAutoAdvance(!autoAdvance)}
-                        className={cn(
-                          "mt-4 flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer",
-                          autoAdvance ? "text-brand" : "text-text-muted",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "w-8 h-4.5 rounded-full transition-colors relative",
-                            autoAdvance ? "bg-brand" : "bg-brand-300",
-                          )}
-                        >
-                          <motion.div
-                            className="absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm"
-                            animate={{ left: autoAdvance ? 16 : 2 }}
-                            transition={{ duration: 0.2 }}
-                          />
-                        </div>
-                        Auto-advance when timer ends
-                      </button>
-                    )}
-
-                    {currentTimer && (
-                      <div className="mt-8 flex justify-center">
-                        <TimerRing
-                          timer={currentTimer}
-                          onToggle={() => toggleTimer(currentStep)}
-                          onReset={() => resetTimer(currentStep)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Voice hint */}
-                    {isSupported && voiceEnabled && (
-                      <div className="mt-6 flex items-center gap-2 text-[11px] text-text-muted bg-brand-50 border border-brand-200 rounded-sm px-2.5 py-1.5 w-fit">
-                        <Mic className="w-3 h-3 text-brand" />
-                        <span>
-                          Try saying{" "}
-                          <span className="font-semibold text-brand">
-                            &quot;Next&quot;
-                          </span>
-                          ,{" "}
-                          <span className="font-semibold text-brand">
-                            &quot;Previous&quot;
-                          </span>
-                          , or{" "}
-                          <span className="font-semibold text-brand">
-                            &quot;Start timer&quot;
-                          </span>
-                          , or{" "}
-                          <span className="font-semibold text-brand">
-                            &quot;Finish&quot;
-                          </span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <p className="text-center text-xs text-text-muted mt-4 select-none">
-                  Swipe or tap arrows to navigate
-                </p>
-              </motion.div>
-            </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between w-full max-w-2xl mt-6 gap-4">
-            {/* LEFT: nav arrows */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={goPrev}
-                disabled={currentStep === 0}
-                className={cn(
-                  "flex items-center gap-2 px-4 sm:px-6 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
-                  currentStep === 0
-                    ? "opacity-30 cursor-not-allowed text-text-muted"
-                    : "bg-white/80 text-text-primary hover:bg-white border border-brand-200 shadow-brand-xs",
-                )}
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">Previous</span>
-              </button>
+          {/* ---- NAV BUTTONS (pinned at bottom, always visible) ---- */}
+          <div className="shrink-0 bg-white/80 backdrop-blur-sm border-t border-brand-200 px-4 py-3">
+            <div className="flex items-center justify-between w-full max-w-2xl mx-auto gap-4">
+              {/* LEFT: nav arrows */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={goPrev}
+                  disabled={currentStep === 0}
+                  className={cn(
+                    "flex items-center gap-2 px-4 sm:px-6 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
+                    currentStep === 0
+                      ? "opacity-30 cursor-not-allowed text-text-muted"
+                      : "bg-white/80 text-text-primary hover:bg-white border border-brand-200 shadow-brand-xs",
+                  )}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  <span className="hidden sm:inline">Previous</span>
+                </button>
 
-              <button
-                onClick={goNext}
-                className={cn(
-                  "flex items-center gap-2 px-6 sm:px-8 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
-                  currentStep === totalSteps - 1
-                    ? "bg-linear-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20"
-                    : "bg-brand text-white hover:bg-brand-600 shadow-brand",
-                )}
-              >
-                <span className="hidden sm:inline">
-                  {currentStep === totalSteps - 1 ? "Finish!" : "Next"}
-                </span>
-                {currentStep === totalSteps - 1 ? (
-                  <PartyPopper className="w-5 h-5" />
-                ) : (
-                  <ChevronRight className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+                <button
+                  onClick={goNext}
+                  className={cn(
+                    "flex items-center gap-2 px-6 sm:px-8 py-4 rounded-sm font-medium text-sm transition-all active:scale-95 cursor-pointer",
+                    currentStep === totalSteps - 1
+                      ? "bg-linear-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/20"
+                      : "bg-brand text-white hover:bg-brand-600 shadow-brand",
+                  )}
+                >
+                  <span className="hidden sm:inline">
+                    {currentStep === totalSteps - 1 ? "Finish!" : "Next"}
+                  </span>
+                  {currentStep === totalSteps - 1 ? (
+                    <PartyPopper className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
 
-            {/* RIGHT: floating timer button on mobile */}
-            <div className="sm:hidden">
-              <FloatingTimerPanel
-                timers={timers}
-                currentStep={currentStep}
-                onGoToStep={goToStep}
-                onToggle={toggleTimer}
-              />
+              {/* RIGHT: floating timer button on mobile */}
+              <div className="sm:hidden">
+                <FloatingTimerPanel
+                  timers={timers}
+                  currentStep={currentStep}
+                  onGoToStep={goToStep}
+                  onToggle={toggleTimer}
+                />
+              </div>
             </div>
           </div>
         </div>

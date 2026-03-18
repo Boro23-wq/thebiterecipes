@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { recipes } from "@/db/schema";
+import { recipes, userPreferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { RecipesView } from "@/components/recipes-view";
 
@@ -22,10 +22,17 @@ export default async function RecipesPage() {
     where: eq(recipes.userId, user.id),
   });
 
+  // Fetch user's preferred view mode
+  const prefs = await db.query.userPreferences.findFirst({
+    where: eq(userPreferences.userId, user.id),
+    columns: { defaultViewMode: true },
+  });
+
   return (
     <RecipesView
       initialRecipes={initialRecipes}
       totalCount={totalCount.length}
+      defaultViewMode={(prefs?.defaultViewMode as "grid" | "compact") ?? "grid"}
     />
   );
 }

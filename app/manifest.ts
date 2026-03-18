@@ -14,16 +14,21 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["food", "lifestyle"],
     icons: [
       {
-        src: "/icons/icon-192.png",
+        src: "/android-chrome-192x192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icons/icon-512.png",
+        src: "/android-chrome-512x512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
+      },
+      {
+        src: "/icon-384x384.png",
+        sizes: "384x384",
+        type: "image/png",
       },
     ],
     shortcuts: [
@@ -31,13 +36,13 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Import Recipe",
         short_name: "Import",
         url: "/dashboard/recipes/import",
-        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
+        icons: [{ src: "/android-chrome-192x192.png", sizes: "192x192" }],
       },
       {
         name: "Add Recipe",
         short_name: "New",
         url: "/dashboard/recipes/new",
-        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
+        icons: [{ src: "/android-chrome-192x192.png", sizes: "192x192" }],
       },
     ],
     share_target: {

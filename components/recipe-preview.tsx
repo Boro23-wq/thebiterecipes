@@ -37,7 +37,6 @@ interface RecipePreviewProps {
 }
 
 export function RecipePreview({ recipe }: RecipePreviewProps) {
-  console.log("PREVIEW imageUrls:", recipe.imageUrls);
   return (
     <div className="bg-white rounded-sm border border-border-light overflow-hidden">
       {/* Header with Image */}
@@ -207,7 +206,7 @@ export function RecipePreview({ recipe }: RecipePreviewProps) {
       </div>
 
       {/* Ingredients & Instructions */}
-      <div className="grid md:grid-cols-2 gap-6 p-6 bg-brand-50 border-t border-border-light">
+      <div className="grid md:grid-cols-2 gap-6 p-6 bg-brand-50 border-t border-border-light ">
         {/* Ingredients */}
         <div>
           <h3 className="text-sm font-semibold text-text-primary mb-3">

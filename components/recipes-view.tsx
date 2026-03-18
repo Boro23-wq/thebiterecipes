@@ -84,6 +84,7 @@ interface Recipe {
 interface RecipesViewProps {
   initialRecipes: Recipe[];
   totalCount: number;
+  defaultViewMode?: "grid" | "compact";
 }
 
 function useDebouncedValue<T>(value: T, delay = 300) {
@@ -97,14 +98,18 @@ function useDebouncedValue<T>(value: T, delay = 300) {
   return debounced;
 }
 
-export function RecipesView({ initialRecipes, totalCount }: RecipesViewProps) {
+export function RecipesView({
+  initialRecipes,
+  totalCount,
+  defaultViewMode = "grid",
+}: RecipesViewProps) {
   const CONTROL_H = "h-10";
   const RECIPES_PER_PAGE = 24;
 
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
   const [isPending, startTransition] = useTransition();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);

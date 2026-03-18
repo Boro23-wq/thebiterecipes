@@ -446,23 +446,46 @@ export async function importRecipe(data: ParsedRecipe) {
     );
   }
 
-  // Ingredients (parse amount so UI can bold quantities)
+  // Ingredients (parse amount + detect section headers for groups)
   const ingredientLines = (data.ingredients ?? [])
     .map((s) => s.trim())
     .map((s) => s.replace(/^[-–—•·*]\s*/, ""))
     .filter(Boolean);
+
   if (ingredientLines.length > 0) {
-    await db.insert(recipeIngredients).values(
-      ingredientLines.map((line, index) => {
-        const { amount, ingredient } = parseIngredient(line);
-        return {
-          recipeId: recipe.id,
-          amount: amount || null,
-          ingredient,
-          order: index + 1,
-        };
-      }),
-    );
+    let currentGroup: string | null = null;
+    let orderIndex = 1;
+
+    const ingredientValues: {
+      recipeId: string;
+      amount: string | null;
+      ingredient: string;
+      group: string | null;
+      order: number;
+    }[] = [];
+
+    for (const line of ingredientLines) {
+      const { amount, ingredient, isHeader } = parseIngredient(line);
+
+      if (isHeader) {
+        // This line is a section header — update the current group
+        // Don't insert it as an ingredient row
+        currentGroup = ingredient;
+        continue;
+      }
+
+      ingredientValues.push({
+        recipeId: recipe.id,
+        amount: amount || null,
+        ingredient,
+        group: currentGroup,
+        order: orderIndex++,
+      });
+    }
+
+    if (ingredientValues.length > 0) {
+      await db.insert(recipeIngredients).values(ingredientValues);
+    }
   }
 
   // Instructions

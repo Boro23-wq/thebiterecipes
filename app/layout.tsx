@@ -6,6 +6,7 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { biteClerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -34,9 +35,19 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bite — AI Recipe Manager",
+  title: "Bite — AI Cooking Companion",
   description: "All your recipes organized in one place, powered by AI.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -49,7 +60,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${jetbrainsMono.variable} antialiased bg-[#FEFEFE]`}
       >
-        <ClerkProvider>
+        <ClerkProvider appearance={biteClerkAppearance}>
           {children}
           <Toaster position="top-center" />
         </ClerkProvider>
@@ -68,7 +79,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-// industry -> market components -> key segments what company focuses on
-
-// outline
