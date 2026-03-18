@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import ImportTerminal from "@/components/landing/import-terminal";
 import Navbar from "@/components/landing/navbar";
 import Hero from "@/components/landing/hero";
-import Bottom from "@/components/landing/bottom";
 import GeminiSection from "@/components/landing/gemini-section";
 import PropBlocks from "@/components/landing/prop-block";
+import Footer from "@/components/landing/footer";
 
 export default async function Page() {
   const user = await currentUser();
@@ -29,7 +29,7 @@ export default async function Page() {
       </div>
 
       <GeminiSection />
-      <Bottom />
+      <Footer />
     </main>
   );
 }

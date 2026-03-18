@@ -1,41 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Link2, Wand2, ListChecks, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ImportRecipeForm } from "@/components/import-recipe-form";
 import { HeroBeforeAfter } from "@/components/import-hero";
-
-function Step({
-  number,
-  icon,
-  title,
-  desc,
-}: {
-  number: number;
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="relative rounded-sm bg-brand-50/60 p-4 space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-brand-200 text-brand text-xs font-bold shrink-0">
-          {number}
-        </div>
-        <div className="rounded-sm bg-white/80 p-1.5 text-brand shadow-xs">
-          {icon}
-        </div>
-      </div>
-      <div>
-        <div className="text-sm font-semibold text-text-primary">{title}</div>
-        <div className="mt-1 text-xs text-text-secondary leading-relaxed">
-          {desc}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default async function ImportRecipePage() {
   const user = await currentUser();
@@ -54,56 +23,44 @@ export default async function ImportRecipePage() {
       {/* Hero */}
       <HeroBeforeAfter />
 
-      {/* How it works */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Step
-          number={1}
-          icon={<Link2 className="h-4 w-4" />}
-          title="Paste any link"
-          desc="Recipe sites, YouTube, TikTok — we auto-detect the source."
-        />
-        <Step
-          number={2}
-          icon={<Wand2 className="h-4 w-4" />}
-          title="We extract it"
-          desc="Structured data for websites, AI for social media content."
-        />
-        <Step
-          number={3}
-          icon={<ListChecks className="h-4 w-4" />}
-          title="Save & tweak"
-          desc="Review, edit, and store in Bite."
-        />
+      {/* How it works — inline text */}
+      <div className="text-center space-y-1">
+        <p className="text-sm text-text-secondary">
+          <span className="font-medium text-brand">Paste a link</span>
+          <span className="mx-2 text-border-light">/</span>
+          <span className="font-medium text-brand">AI extracts</span>
+          <span className="mx-2 text-border-light">/</span>
+          <span className="font-medium text-brand">Save & cook</span>
+        </p>
+        <p className="text-xs text-text-muted">
+          Works with 100+ recipe sites, YouTube, TikTok, and screenshots
+        </p>
       </div>
 
       {/* Form */}
       <ImportRecipeForm />
 
-      {/* Supported Sources */}
-      <div className="relative overflow-hidden rounded-sm bg-brand/5 shadow-brand-sm">
-        <div className="absolute inset-0 bg-linear-to-br from-brand-50 via-transparent to-brand-75 opacity-50" />
-        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-brand-200/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-brand-300/15 blur-3xl" />
+      {/* Supported sources */}
+      <div className="rounded-sm border border-border-light p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-brand" />
+          <h3 className="text-xs font-semibold text-text-primary">
+            Supported sources
+          </h3>
+        </div>
 
-        <div className="relative p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-brand" />
-            <h3 className="text-sm font-semibold text-text-primary">
-              Supported Sources
-            </h3>
-          </div>
-
-          {/* Recipe Sites */}
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Recipe sites */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text-primary">
-                Recipe Sites
+                Recipe sites
               </span>
-              <span className="text-[11px] text-brand font-medium bg-brand-100 px-2 py-0.5 rounded-sm">
-                JSON-LD Powered
+              <span className="text-[10px] text-brand font-medium bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded-sm">
+                JSON-LD
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {[
                 "AllRecipes",
                 "Food Network",
@@ -116,7 +73,7 @@ export default async function ImportRecipePage() {
               ].map((site) => (
                 <span
                   key={site}
-                  className="inline-flex items-center gap-1.5 rounded-sm bg-white/80 px-2.5 py-1 text-xs text-text-secondary shadow-xs"
+                  className="inline-flex items-center gap-1 rounded-sm border border-border-light px-2 py-0.5 text-[11px] text-text-secondary"
                 >
                   <span className="h-1 w-1 rounded-full bg-brand" />
                   {site}
@@ -125,19 +82,17 @@ export default async function ImportRecipePage() {
             </div>
           </div>
 
-          <div className="border-t border-border-light" />
-
-          {/* Social Media */}
-          <div className="space-y-3">
+          {/* Social media */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text-primary">
-                Social Media
+                Social media
               </span>
-              <span className="text-[11px] text-brand font-medium bg-brand-100 px-2 py-0.5 rounded-sm">
-                AI Powered
+              <span className="text-[10px] text-brand font-medium bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded-sm">
+                AI
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {[
                 { name: "YouTube", icon: "🎬" },
                 { name: "TikTok", icon: "🎵" },
@@ -146,7 +101,7 @@ export default async function ImportRecipePage() {
               ].map((p) => (
                 <span
                   key={p.name}
-                  className="inline-flex items-center gap-1.5 rounded-sm bg-white/80 px-2.5 py-1 text-xs text-text-secondary shadow-xs"
+                  className="inline-flex items-center gap-1 rounded-sm border border-border-light px-2 py-0.5 text-[11px] text-text-secondary"
                 >
                   <span>{p.icon}</span>
                   {p.name}

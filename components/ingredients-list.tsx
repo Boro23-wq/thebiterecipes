@@ -2,11 +2,14 @@
 
 import { cn } from "@/lib/utils";
 import { text, spacing } from "@/lib/design-tokens";
+import { usePreferences } from "@/lib/preferences-context";
+import { convertAmount } from "@/lib/convert-units";
 
 interface Ingredient {
   id: number;
   ingredient: string;
   amount?: string | null;
+  group?: string | null;
   order: number;
 }
 
@@ -23,6 +26,7 @@ export function IngredientsList({
   currentServings,
   onServingsChange,
 }: IngredientsListProps) {
+  const { measurementUnit } = usePreferences();
   const multiplier = currentServings / baseServings;
 
   const scaleIngredient = (ingredient: string): string => {
@@ -119,6 +123,32 @@ export function IngredientsList({
     return rest ? `${scaledStr} ${rest}` : scaledStr;
   };
 
+  /** Scale first, then convert units if needed */
+  const displayAmount = (amount: string, ingredientName?: string): string => {
+    const scaled = scaleAmount(amount);
+    return convertAmount(
+      scaled,
+      measurementUnit as "imperial" | "metric",
+      ingredientName,
+    );
+  };
+
+  // Group ingredients by their group field
+  const groupedIngredients: { group: string | null; items: Ingredient[] }[] =
+    [];
+  let currentGroup: string | null = null;
+
+  for (const ing of ingredients) {
+    if (ing.group !== currentGroup) {
+      currentGroup = ing.group ?? null;
+      groupedIngredients.push({ group: currentGroup, items: [] });
+    }
+    if (groupedIngredients.length === 0) {
+      groupedIngredients.push({ group: null, items: [] });
+    }
+    groupedIngredients[groupedIngredients.length - 1].items.push(ing);
+  }
+
   return (
     <div>
       {/* Serving Controls */}
@@ -157,35 +187,54 @@ export function IngredientsList({
             x
           </span>
         )}
+        {measurementUnit === "metric" && (
+          <span className="text-text-muted"> · Metric</span>
+        )}
       </p>
 
-      {/* Ingredients list */}
-      <ul className={spacing.card}>
-        {ingredients.map((ing, index) => (
-          <li
-            key={ing.id}
-            className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors wrap-break-word"
-          >
-            <span className="shrink-0 w-6 h-6 rounded-sm bg-brand-100 text-brand flex items-center justify-center text-xs font-medium">
-              {index + 1}
-            </span>
-            <div className="flex-1">
-              {ing.amount ? (
-                <span className={cn(text.body)}>
-                  <span className="font-semibold text-text-primary">
-                    {scaleAmount(ing.amount)}{" "}
+      {/* Ingredients list with groups */}
+      <div className={spacing.card}>
+        {groupedIngredients.map((section, sIdx) => (
+          <div key={sIdx}>
+            {/* Group header */}
+            {section.group && (
+              <div className="mt-4 first:mt-0 mb-2 px-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-brand">
+                  {section.group}
+                </span>
+              </div>
+            )}
+
+            {/* Items */}
+            <ul className="space-y-1">
+              {section.items.map((ing, index) => (
+                <li
+                  key={ing.id}
+                  className="flex items-start gap-3 p-2 hover:bg-brand-100 rounded-sm transition-colors wrap-break-word"
+                >
+                  <span className="shrink-0 w-6 h-6 rounded-sm bg-brand-100 text-brand flex items-center justify-center text-xs font-medium">
+                    {ing.order}
                   </span>
-                  {ing.ingredient}
-                </span>
-              ) : (
-                <span className={cn(text.body)}>
-                  {scaleIngredient(ing.ingredient)}
-                </span>
-              )}
-            </div>
-          </li>
+                  <div className="flex-1">
+                    {ing.amount ? (
+                      <span className={cn(text.body)}>
+                        <span className="font-semibold text-text-primary">
+                          {displayAmount(ing.amount, ing.ingredient)}{" "}
+                        </span>
+                        {ing.ingredient}
+                      </span>
+                    ) : (
+                      <span className={cn(text.body)}>
+                        {scaleIngredient(ing.ingredient)}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

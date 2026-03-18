@@ -69,6 +69,7 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
     .notNull(),
   ingredient: text("ingredient").notNull(),
   amount: text("amount"),
+  group: text("group"), // Section header: "For the Sauce", "Dough", etc.
   order: integer("order").notNull(),
 });
 

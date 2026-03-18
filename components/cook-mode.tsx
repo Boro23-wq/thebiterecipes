@@ -24,8 +24,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useVoiceCommands } from "@/lib/use-voice-commands";
+import { convertAmount } from "@/lib/convert-units";
 import { usePreferences } from "@/lib/preferences-context";
+import { useVoiceCommands } from "@/lib/use-voice-commands";
 import { toast } from "sonner";
 
 // ============================================
@@ -704,7 +705,7 @@ function PreCookOverview({
 // ============================================
 
 export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
-  const { defaultServings, timeFormat } = usePreferences();
+  const { defaultServings, timeFormat, measurementUnit } = usePreferences();
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
@@ -1213,7 +1214,10 @@ export function CookMode({ recipe, ingredients, instructions }: CookModeProps) {
                     >
                       {ing.amount && (
                         <span className="font-semibold">
-                          {scaleAmount(ing.amount, servingMultiplier)}{" "}
+                          {convertAmount(
+                            scaleAmount(ing.amount, servingMultiplier),
+                            measurementUnit as "imperial" | "metric",
+                          )}
                         </span>
                       )}
                       {ing.ingredient}

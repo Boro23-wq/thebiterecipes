@@ -7,7 +7,8 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    localPatterns: [{ pathname: "/api/image" }],
+    localPatterns: [{ pathname: "/api/image" }, { pathname: "/**" }],
+
     remotePatterns: [
       { protocol: "https", hostname: "utfs.io", pathname: "/**" },
       { protocol: "https", hostname: "*.ufs.sh" },

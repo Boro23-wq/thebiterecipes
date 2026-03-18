@@ -45,6 +45,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 
 const topItems = [
   {
@@ -135,12 +136,13 @@ export function AppSidebar({ categories }: AppSidebarProps) {
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="border-b border-gray-200 px-4 py-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[#FF6B35] text-white font-bold">
-            B
-          </div>
-          <span className="font-semibold text-base text-text-primary">
-            Bite
-          </span>
+          <Image
+            src="/android-chrome-192x192.png"
+            alt="Bite"
+            width={24}
+            height={24}
+            className="rounded-sm"
+          />
         </div>
       </SidebarHeader>
 

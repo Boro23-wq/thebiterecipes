@@ -1,7 +1,7 @@
-// lib/parse-ingredient.ts
 export type ParsedIngredient = {
   amount: string | null;
   ingredient: string;
+  isHeader: boolean;
 };
 
 const FRACTION_MAP: Record<string, string> = {
@@ -31,7 +31,7 @@ function normalizeAmountString(input: string) {
   // unicode fraction -> ascii fraction
   s = s.replace(/[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g, (ch) => FRACTION_MAP[ch] ?? ch);
 
-  // normalize “–”/“—” to "-"
+  // normalize "–"/"—" to "-"
   s = s.replace(/[–—]/g, "-");
 
   // collapse extra whitespace
@@ -40,51 +40,165 @@ function normalizeAmountString(input: string) {
   return s;
 }
 
+// ============================================
+// HEADER DETECTION
+// ============================================
+
+// Matches lines like:
+//   "For the sauce:"
+//   "For the Dough"
+//   "Sauce:"
+//   "--- Filling ---"
+//   "FROSTING"
+//   "Crust"
+const HEADER_PATTERNS = [
+  /^for\s+(?:the\s+)?(.+?)[:.]?\s*$/i, // "For the sauce:" or "For sauce"
+  /^---+\s*(.+?)\s*---+$/, // "--- Filling ---"
+  /^(.+?):\s*$/, // "Sauce:" (word(s) followed by colon, nothing else)
+];
+
+// Additional check: lines that are ALL CAPS and short (e.g. "FROSTING")
+const isAllCapsHeader = (s: string) =>
+  s.length <= 40 &&
+  s === s.toUpperCase() &&
+  /^[A-Z\s]+$/.test(s) &&
+  !/\d/.test(s);
+
+// Known section header words (case-insensitive, matched as whole line)
+const KNOWN_HEADERS = [
+  "crust",
+  "filling",
+  "frosting",
+  "icing",
+  "glaze",
+  "topping",
+  "sauce",
+  "dressing",
+  "marinade",
+  "dough",
+  "batter",
+  "assembly",
+  "garnish",
+  "broth",
+  "stock",
+  "rice",
+  "salad",
+  "salsa",
+  "seasoning",
+  "rub",
+  "base",
+  "cream",
+  "syrup",
+  "coating",
+];
+
+function detectHeader(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+
+  // Pattern-based detection
+  for (const pattern of HEADER_PATTERNS) {
+    const m = trimmed.match(pattern);
+    if (m) return m[1]?.trim() || trimmed;
+  }
+
+  // ALL CAPS short lines
+  if (isAllCapsHeader(trimmed)) return trimmed;
+
+  // Known single-word headers (exact match, case-insensitive)
+  if (KNOWN_HEADERS.includes(trimmed.toLowerCase())) return trimmed;
+
+  return null;
+}
+
+// ============================================
+// UNITS
+// ============================================
+
 const UNIT_PATTERN =
-  "(?:cups?|cup|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|lb|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l|pinch|dash|cloves?|pieces?|slices?|cans?|can|packages?|package)";
+  "(?:cups?|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|pounds?|lbs?|lb|grams?|g|kilograms?|kg|milliliters?|ml|liters?|l|pinch|dash|cloves?|pieces?|slices?|cans?|packages?|package|sticks?|bunche?s?|heads?|stalks?|sprigs?|handfuls?)";
 
-const AMOUNT_PATTERN =
-  // supports:
-  //  - 1
-  //  - 1/2
-  //  - 1.5
-  //  - 1 1/2
-  //  - 2-3 / 2 - 3
-  //  - 2 to 3
-  //  - optional parentheses immediately after (e.g. 1 (14.5 ounce))
-  "((?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?)" +
-  "(?:\\s*(?:-|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?))?" +
-  "(?:\\s*\\([^)]*\\))?" +
-  ")";
+// ============================================
+// AMOUNT PATTERN (with metric alternative)
+// ============================================
 
-const AMOUNT_WITH_UNIT_RE = new RegExp(
-  `^${AMOUNT_PATTERN}\\s*(${UNIT_PATTERN})?\\b\\s*(.+)$`,
+// Core number: "1", "1/2", "1.5", "1 1/2"
+const NUM = "(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?)";
+
+// Range: "2-3", "2 to 3"
+const RANGE = `(?:\\s*(?:-|to)\\s*${NUM})?`;
+
+// Parenthetical: "(14.5 ounce)"
+const PAREN = "(?:\\s*\\([^)]*\\))?";
+
+// Metric alternative: "/113 grams" or "/192 g"
+// This captures patterns like "½ cup/113 grams" where the slash introduces
+// an alternative measurement that should stay part of the amount
+const METRIC_ALT =
+  "(?:\\/\\d+(?:\\.\\d+)?\\s*(?:grams?|g|kilograms?|kg|ounces?|oz|pounds?|lbs?|lb|milliliters?|ml|liters?|l))?";
+
+// Full amount: number + range + unit + metric-alt + paren
+// e.g. "1/2 cup/113 grams" or "2-3 tablespoons" or "1 (14.5 ounce) can"
+const FULL_AMOUNT = `(${NUM}${RANGE})\\s*(${UNIT_PATTERN})?${METRIC_ALT}${PAREN}`;
+
+const AMOUNT_WITH_UNIT_RE = new RegExp(`^${FULL_AMOUNT}\\s+(.+)$`, "i");
+
+const SIMPLE_AMOUNT_RE = new RegExp(
+  `^(${NUM}${RANGE})${METRIC_ALT}\\s+(.+)$`,
   "i",
 );
 
-const SIMPLE_AMOUNT_RE = new RegExp(`^${AMOUNT_PATTERN}\\s+(.+)$`, "i");
+// ============================================
+// MAIN PARSER
+// ============================================
 
 export function parseIngredient(line: string): ParsedIngredient {
   const raw = (line ?? "").trim();
-  if (!raw) return { amount: null, ingredient: "" };
+  if (!raw) return { amount: null, ingredient: "", isHeader: false };
+
+  // Check if this line is a section header
+  const header = detectHeader(raw);
+  if (header) {
+    return { amount: null, ingredient: header, isHeader: true };
+  }
 
   const normalized = normalizeAmountString(raw);
 
-  // amount + optional unit + rest
+  // Try: amount + optional unit (with metric alt captured) + rest
   const m1 = normalized.match(AMOUNT_WITH_UNIT_RE);
   if (m1) {
-    const amount = [m1[1], m1[2]].filter(Boolean).join(" ").trim();
-    return { amount: amount || null, ingredient: (m1[3] ?? "").trim() };
-  }
+    // Reconstruct the full amount from the original text up to where the
+    // ingredient name begins. This preserves metric alternatives.
+    const ingredientText = (m1[3] ?? "").trim();
+    const ingredientStart = normalized.lastIndexOf(ingredientText);
+    const amountPart =
+      ingredientStart > 0
+        ? normalized.slice(0, ingredientStart).trim()
+        : [m1[1], m1[2]].filter(Boolean).join(" ").trim();
 
-  // amount + rest (no unit)
-  const m2 = normalized.match(SIMPLE_AMOUNT_RE);
-  if (m2) {
     return {
-      amount: (m2[1] ?? "").trim() || null,
-      ingredient: (m2[2] ?? "").trim(),
+      amount: amountPart || null,
+      ingredient: ingredientText,
+      isHeader: false,
     };
   }
 
-  return { amount: null, ingredient: normalized };
+  // Try: amount + rest (no unit)
+  const m2 = normalized.match(SIMPLE_AMOUNT_RE);
+  if (m2) {
+    const ingredientText = (m2[2] ?? "").trim();
+    const ingredientStart = normalized.lastIndexOf(ingredientText);
+    const amountPart =
+      ingredientStart > 0
+        ? normalized.slice(0, ingredientStart).trim()
+        : (m2[1] ?? "").trim();
+
+    return {
+      amount: amountPart || null,
+      ingredient: ingredientText,
+      isHeader: false,
+    };
+  }
+
+  return { amount: null, ingredient: normalized, isHeader: false };
 }
