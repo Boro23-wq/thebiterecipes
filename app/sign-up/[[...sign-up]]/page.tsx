@@ -258,7 +258,7 @@ export default function SignUpPage() {
                     <Clerk.Label className="text-sm font-medium text-[#1A1A1A]">
                       Verification code
                     </Clerk.Label>
-                    <Clerk.Input className="w-full rounded-sm border border-[#E5E7EB] bg-white px-3 py-2.5 text-sm text-[#1A1A1A] outline-none transition-all duration-200 placeholder:text-[#9CA3AF] focus:border-[#FF6B35] focus:ring-[3px] focus:ring-[#FF6B35]/8" />
+                    <Clerk.Input className="w-full rounded-sm mt-2 border border-[#E5E7EB] bg-white px-3 py-2.5 text-sm text-[#1A1A1A] outline-none transition-all duration-200 placeholder:text-[#9CA3AF] focus:border-[#FF6B35] focus:ring-[3px] focus:ring-[#FF6B35]/8" />
                     <Clerk.FieldError className="text-xs text-red-500" />
                   </Clerk.Field>
                 </motion.div>
